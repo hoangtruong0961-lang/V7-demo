@@ -892,7 +892,7 @@ const WorldCreationScreen: React.FC<WorldCreationProps> = ({ onNavigate, onGameS
 
     return (
       <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col h-full">
-        <div className="border-b border-[#cbd2df]/30 dark:border-[#142042]/15 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="border-b border-[#cbd2df]/40 dark:border-[#142042]/15 pb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-white dark:after:bg-[#142042]/5">
           <div>
             <h3 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
               <Users size={15} className="text-mystic-accent" />
@@ -913,7 +913,7 @@ const WorldCreationScreen: React.FC<WorldCreationProps> = ({ onNavigate, onGameS
         </div>
 
         {/* Bộ lọc nhanh bách khoa (Encyclopedia Quick Categories) */}
-        <div className="flex gap-1.5 overflow-x-auto pb-2 shrink-0 scrollbar-none custom-scrollbar border-b border-dashed border-slate-250 dark:border-slate-800">
+        <div className="flex gap-2 overflow-x-auto pb-3 shrink-0 scrollbar-none custom-scrollbar border-b border-[#cbd2df]/40 dark:border-[#142042]/15 relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-white dark:after:bg-[#142042]/5">
           {[
             { id: 'ALL', label: 'Tất cả thẻ', icon: '📖', count: state.entities.length },
             { id: 'NPC', label: 'Nhân vật (NPC)', icon: '👥', count: state.entities.filter(e => e.type === 'NPC').length },
@@ -946,7 +946,7 @@ const WorldCreationScreen: React.FC<WorldCreationProps> = ({ onNavigate, onGameS
 
         {/* Danh sách các thẻ */}
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-4 px-2">
             {filteredEntities.map(ent => {
               const catConfig = {
                 NPC: { label: 'Nhân vật', color: 'border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10', icon: '👥' },
@@ -959,20 +959,20 @@ const WorldCreationScreen: React.FC<WorldCreationProps> = ({ onNavigate, onGameS
               return (
                 <div 
                   key={ent.id} 
-                  className="bg-white dark:bg-slate-950/25 border border-slate-200 dark:border-slate-850/80 p-4.5 rounded-2xl hover:border-mystic-accent hover:shadow-[0_4px_12px_-5px_rgba(var(--color-mystic-accent),0.15)] transition-all group relative flex flex-col"
+                  className="bg-[#e6ebf4] dark:bg-[#0b1329] border border-[#cbd2df]/15 dark:border-[#142042]/10 p-5 rounded-2xl shadow-[4px_4px_8px_#cbd2df,-4px_-4px_8px_#ffffff] dark:shadow-[4px_4px_8px_#030610,-4px_-4px_8px_#142042] hover:shadow-[7px_7px_14px_#cbd2df,-7px_-7px_14px_#ffffff] dark:hover:shadow-[7px_7px_14px_#030610,-7px_-7px_14px_#142042] hover:-translate-y-0.5 transition-all duration-300 group relative flex flex-col h-[210px]"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border uppercase tracking-wider flex items-center gap-1 ${catConfig.color}`}>
+                  <div className="flex justify-between items-center mb-2.5">
+                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider flex items-center gap-1 ${catConfig.color}`}>
                       <span>{catConfig.icon}</span>
                       <span>{catConfig.label}</span>
                     </span>
-                    <div className="flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1.5 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-all duration-200">
                       <button 
                         onClick={() => { setEditingEntityId(ent.id); setShowEntityForm(true); }} 
-                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-mystic-accent transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#e6ebf4] dark:bg-[#0b1329] shadow-[2px_2px_4px_#cbd2df,-2px_-2px_4px_#ffffff] dark:shadow-[2px_2px_4px_#030610,-2px_-2px_4px_#142042] text-slate-500 hover:text-mystic-accent active:shadow-[inset_1.5px_1.5px_3px_#cbd2df,inset_-1.5px_-1.5px_3px_#ffffff] dark:active:shadow-[inset_1.5px_1.5px_3px_#030610,inset_-1.5px_-1.5px_3px_#142042] transition-all cursor-pointer border border-[#cbd2df]/10 dark:border-[#142042]/5"
                         title="Chỉnh sửa mục từ"
                       >
-                        <Edit2 size={13}/>
+                        <Edit2 size={12}/>
                       </button>
                       <button 
                         onClick={() => {
@@ -980,45 +980,45 @@ const WorldCreationScreen: React.FC<WorldCreationProps> = ({ onNavigate, onGameS
                             store.removeEntity(ent.id);
                           }
                         }} 
-                        className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-red-500 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#e6ebf4] dark:bg-[#0b1329] shadow-[2px_2px_4px_#cbd2df,-2px_-2px_4px_#ffffff] dark:shadow-[2px_2px_4px_#030610,-2px_-2px_4px_#142042] text-slate-500 hover:text-red-500 active:shadow-[inset_1.5px_1.5px_3px_#cbd2df,inset_-1.5px_-1.5px_3px_#ffffff] dark:active:shadow-[inset_1.5px_1.5px_3px_#030610,inset_-1.5px_-1.5px_3px_#142042] transition-all cursor-pointer border border-[#cbd2df]/10 dark:border-[#142042]/5"
                         title="Xóa mục từ"
                       >
-                        <Trash2 size={13}/>
+                        <Trash2 size={12}/>
                       </button>
                     </div>
                   </div>
 
-                  <h4 className="font-extrabold text-slate-800 dark:text-slate-100 mb-1.5 truncate text-xs leading-tight">
+                  <h4 className="font-black text-slate-800 dark:text-slate-100 mb-1 truncate text-xs leading-tight tracking-wide">
                     {ent.name}
                   </h4>
 
-                  {ent.type === 'NPC' ? (
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div className="space-y-1 my-1">
-                        <div className="flex items-center gap-2 text-[10.5px] text-slate-500 dark:text-slate-400">
-                          <span className="font-bold text-slate-600 dark:text-slate-350">Giới tính:</span> {ent.gender || 'Chưa rõ'}
+                  <div className="flex-1 min-h-0 bg-[#e6ebf4] dark:bg-[#0b1329] shadow-[inset_2.5px_2.5px_5px_#cbd2df,inset_-2.5px_-2.5px_5px_#ffffff] dark:shadow-[inset_2.5px_2.5px_5px_#030610,inset_-2.5px_-2.5px_5px_#142042] hover:shadow-[inset_3px_3px_6px_#cbd2df,inset_-3px_-3px_6px_#ffffff] dark:hover:shadow-[inset_3px_3px_6px_#030610,inset_-3px_-3px_6px_#142042] rounded-xl border border-[#cbd2df]/15 dark:border-[#142042]/10 p-3 overflow-y-auto custom-scrollbar transition-all duration-200">
+                    {ent.type === 'NPC' ? (
+                      <div className="space-y-1.5 text-left h-full">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-bold border-b border-slate-300/25 dark:border-slate-800/30 pb-1 shrink-0">
+                          <span>👤 {ent.gender || 'Chưa rõ'}</span>
                           <span className="text-slate-300">|</span>
-                          <span className="font-bold text-slate-600 dark:text-slate-350">Tuổi:</span> {ent.age || 'Chưa rõ'}
+                          <span>🎂 {ent.age || 'Chưa rõ' || 'Chưa rõ'}</span>
                         </div>
+                        <p className="text-[10.5px] text-slate-650 dark:text-slate-300 leading-relaxed font-medium">
+                          {ent.description || ent.personality || ent.background || 'Chưa có thông tin bách khoa.'}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-3 mb-2 pt-1.5 border-t border-slate-100 dark:border-slate-900/80 leading-relaxed font-normal">
-                        {ent.description || ent.personality || ent.background || 'Chưa có thông tin bách khoa.'}
+                    ) : (
+                      <p className="text-[10.5px] text-slate-650 dark:text-slate-300 leading-relaxed font-medium h-full" style={{ wordBreak: 'break-word' }}>
+                        {ent.description || 'Chưa có thông tin bách khoa chi tiết.'}
                       </p>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-4 mb-3 flex-1 leading-relaxed font-normal" style={{ wordBreak: 'break-word' }}>
-                      {ent.description || 'Chưa có thông tin bách khoa chi tiết.'}
-                    </p>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}
 
             {filteredEntities.length === 0 && (
-              <div className="col-span-full border border-dashed border-slate-205 dark:border-slate-800 bg-[#e6ebf4]/20 rounded-2xl flex flex-col items-center justify-center p-12 text-slate-400 dark:text-slate-500 text-center">
-                <Database size={30} className="mb-3 text-slate-350 dark:text-slate-700 animate-pulse" />
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Thư viện bách khoa không có kết quả phù hợp</p>
-                <p className="text-[10px] mt-1 text-slate-500">
+              <div className="col-span-full border border-dashed border-slate-300 dark:border-slate-800 bg-[#e6ebf4] dark:bg-[#0b1329] shadow-[inset_4px_4px_8px_#cbd2df,inset_-4px_-4px_8px_#ffffff] dark:shadow-[inset_4px_4px_8px_#030610,inset_-4px_-4px_8px_#142042] rounded-3xl flex flex-col items-center justify-center p-12 text-slate-450 dark:text-slate-500 text-center">
+                <Database size={32} className="mb-3.5 text-slate-400 dark:text-slate-700 animate-pulse" />
+                <p className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wide">Thư viện bách khoa phản khứ không có...</p>
+                <p className="text-[10px] mt-1.5 text-slate-500 font-medium max-w-sm leading-relaxed">
                   {state.entities.length === 0 
                     ? 'Thế giới chưa có mục từ nào. Tạo dựng mục đầu tiên bằng nút "Thêm Thẻ Bách Khoa" phía trên.'
                     : 'Hãy chuyển loại bộ lọc bách khoa ở trên để thấy các thẻ.'}

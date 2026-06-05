@@ -669,6 +669,27 @@ User is roleplaying the main character named "${playerProfile.name}".
     });
   }
 
+  // BIÊN GIỚI THỂ LOẠI & BẮT BUỘC NHẤT QUÁN BỐI CẢNH (CRITICAL ANTI-GENRE DRIFT)
+  segments.push({
+    priority: POSITION_PRIORITY["system"],
+    order: 3,
+    content: `
+<GENRE_AND_SETTING_GROUNDING>
+⚠️ BIÊN GIỚI THỂ LOẠI & CHỐNG HƯ CẤU LỆCH TÔNG (ANTI-GENRE DRIFT & COHERENCE LAWS):
+- Thể loại thế giới: "${(worldSettings as any)?.genre || "Đồng nhân / Sandbox"}"
+- Tên tác phẩm IP / Bối cảnh: "${(worldSettings as any)?.worldName || "Chưa rõ"}"
+
+QUY TẮC PHÁT TRIỂN TRUYỆN VÀ VẬT PHẨM (MANDATORY):
+1. **Không tự ý cho nhặt vật phẩm Tiên Hiệp**: Tuyệt đối KHÔNG ĐƯỢC CHẾ thêm các vật phẩm, kỹ năng, đan dược hoặc cơ chế hoạt động thuộc thể loại Tiên Hiệp, Tu Chân, Huyền Huyễn (như: pháp bảo, linh bảo, đan dược, tiên dược, phi kiếm, ngự kiếm phi thăng, kinh căn, tẩy tủy, bách khoa tu đạo, linh đơn, v.v.) vào bất kỳ thế giới nào không phải thế giới Tu Tiên đích thực. 
+   - Ví dụ: Nếu người chơi đang ở thế giới modern, học đường, phép thuật phương tây (Hogwarts), urban fantasy, đô thị thuần túy hoặc nhẫn giả (Naruto)... cấm tuyệt đối xuất hiện thuật ngữ tu tiên hay vật phẩm tiên hiệp. Ma pháp ra ma pháp, võ đạo ra võ đạo, ninja ra ninja, đời thường ra đời thường.
+2. **Không tự sáng chế tình tiết xa rời cốt truyện (Anti-Wild Hallucination)**: 
+   - Khi viết tiếp nội dung hoặc đề xuất lựa chọn hành động (<branches>), bạn PHẢI bám sát tình huống thực tế của lượt chat trước và thông tin bối cảnh cốt truyện gốc. Không được biến tấu vô lý thêm thắt các sự kiện "khủng bố cứu thế", "cheat ẩn", hay các "hệ thống" kỳ quặc nằm ngoài thiết lập ban đầu.
+   - Giữ cho thế giới hoạt động trong sự nghiêm ngặt logic của nguyên tác (nếu đây là Đồng nhân).
+3. **Kỷ luật lexicon (từ vựng) Chặt chẽ**: Chỉ sử dụng các thuật ngữ, lối đối thoại, cách xưng xô, cách mô tả phù hợp với IP thế giới gốc. OOC (Out Of Character) và lạc tông bối cảnh là hoàn toàn cấm kỵ.
+</GENRE_AND_SETTING_GROUNDING>`,
+    source: "GenreAndSettingGrounding",
+  });
+
   // 0. Minimalist NPC Registry
   if (minimalistSection) {
     segments.push({
@@ -965,11 +986,11 @@ You MUST adhere to the following technical formatting rules for the content log:
    - **MANDATORY**: Each dialogue or thought block MUST be on its own line. Absolutely DO NOT mix narrative text and dialogue/thought on the same line.
    - **MANDATORY**: Use exactly 2 line breaks before and after every dialogue block to ensure clear separation from narrative paragraphs.
    - Example 1: 
-     Trần Thiên Vũ: 「Chào em.」
+     Arthur: 「Chào bạn.」
      
-     Lý Mạc Sầu nói: 「Ngươi là ai?」
+     Sophia nói: 「Bạn là ai?」
    - Example 2 (Thoughts):
-     Lý Mạc Sầu nghĩ: ﹁Chẳng lẽ hắn là cao thủ?﹂
+     Sophia nghĩ: ﹁Chẳng lẽ anh ta là đồng đội?﹂
    - For the Main Character (MC), use their name: ${playerProfile.name}: 「...」.
    - Absolutely DO NOT write dialogue/thoughts without a preceding character name. This is to ensure the UI can correctly identify the speaker.
    - If the dialogue is from an unknown source or a generic narrator voice, use Người dẫn chuyện: 「...」 or Giọng nói lạ: 「...」.

@@ -34,29 +34,41 @@ export const GraphRAGService = {
 
     async getAllNodes(saveId: string): Promise<GraphNode[]> {
         if (this._nodesCache[saveId]) {
-            return this._nodesCache[saveId];
+            return JSON.parse(JSON.stringify(this._nodesCache[saveId]));
         }
         const nodes = await dbService.getTavoData(this.getNodesKey(saveId));
         const finalNodes = (nodes || []) as GraphNode[];
-        this._nodesCache[saveId] = finalNodes;
+        this._nodesCache[saveId] = JSON.parse(JSON.stringify(finalNodes));
         return finalNodes;
     },
 
     async getAllEdges(saveId: string): Promise<GraphEdge[]> {
         if (this._edgesCache[saveId]) {
-            return this._edgesCache[saveId];
+            return JSON.parse(JSON.stringify(this._edgesCache[saveId]));
         }
         const edges = await dbService.getTavoData(this.getEdgesKey(saveId));
         const finalEdges = (edges || []) as GraphEdge[];
-        this._edgesCache[saveId] = finalEdges;
+        this._edgesCache[saveId] = JSON.parse(JSON.stringify(finalEdges));
         return finalEdges;
     },
 
     async saveGraphData(saveId: string, nodes: GraphNode[], edges: GraphEdge[]): Promise<void> {
-        this._nodesCache[saveId] = nodes;
-        this._edgesCache[saveId] = edges;
+        delete this._nodesCache[saveId];
+        delete this._edgesCache[saveId];
         await dbService.setTavoData(this.getNodesKey(saveId), nodes);
         await dbService.setTavoData(this.getEdgesKey(saveId), edges);
+        this._nodesCache[saveId] = JSON.parse(JSON.stringify(nodes));
+        this._edgesCache[saveId] = JSON.parse(JSON.stringify(edges));
+    },
+
+    clearCache(saveId?: string): void {
+        if (saveId) {
+            delete this._nodesCache[saveId];
+            delete this._edgesCache[saveId];
+        } else {
+            this._nodesCache = {};
+            this._edgesCache = {};
+        }
     },
 
     /**

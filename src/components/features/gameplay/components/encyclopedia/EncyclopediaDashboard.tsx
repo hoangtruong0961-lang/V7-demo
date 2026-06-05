@@ -62,7 +62,7 @@ const STARTER_TEMPLATES = [
   "age": "37 tuổi",
   "appearance": "Khoác bộ giáp thép rạn nứt bị phong hóa bởi mưa cát, khoác áo choàng rách bạc màu. Ánh mắt trầm uất và có một vết sẹo dài chạy dọc má trái.",
   "voiceAndTone": "Văn phong trầm ấm, nghiêm nghị, pha chút mệt mỏi của kẻ phong sương.",
-  "personality": "Kiên trung, ít nói, tôn trọng danh dự nhưng thực tế và cảnh giác cao độ.",
+  "personality": "Kiên trung, ít nói, tôn trọng danh dư nhưng thực tế và cảnh giác cao độ.",
   "coreValues": "Luôn bảo vệ kẻ yếu thế, không bao giờ bội ước lời thề kiếm sĩ.",
   "hardLimits": "Tuyệt đối không ra tay với trẻ em và phụ nữ không có khả năng tự vệ.",
   "definingEvents": "Bị trục xuất khỏi Thánh Điện Ánh Sáng sau khi phát hiện giáo hoàng thông đồng với Đại Quỷ.",
@@ -80,7 +80,7 @@ const STARTER_TEMPLATES = [
       alignment: "Chính Trực Khắc Khổ (Lawful Good)",
       role: "Đồng minh cốt cán / Mentor chính",
       danger_level: "B (Khống chế bởi ma khí nguyền rủa)",
-      points_of_interest: "Vùng biên thùy sương gió / Quạt quán lữ hành hoang phế"
+      points_of_interest: "Vùng biên thùy sương gió / Quán lữ hành hoang phế"
     }
   },
   {
@@ -89,7 +89,7 @@ const STARTER_TEMPLATES = [
     keyword: "Thung lũng Sương Hải",
     keywords: ["Sương Hải", "Thung lũng", "Eldoria"],
     description: "Nhật ký vùng đất sương mù huyền ảo bí ẩn, chứa đầy mana kết tinh lạnh giá lý tưởng cho pháp thuật hệ băng.",
-    text: "Thung lũng sương mù vĩnh cửu nằm ở cực bắc đại lục Eldoria. Vào ban đêm, các luồng sương sương lam lấp lánh (mana hóa hơi) dâng cao như sóng biển, nhấn chìm toàn bộ rừng thông cổ thụ trong ánh sáng dị kỳ. Nơi đây là thánh địa phong ấn Thần Thú Băng Hà và chứa đầy các quặng ma thạch lạnh giá.",
+    text: "Thung lũng sương mù vĩnh cửu nằm ở cực bắc đại lục Eldoria. Vào ban đêm, các luồng sương lam lấp lánh (mana hóa hơi) dâng cao như sóng biển, nhấn chìm toàn bộ rừng thông cổ thụ trong ánh sáng dị kỳ. Nơi đây là thánh địa phong ấn Thần Thú Băng Hà và chứa đầy các quặng ma thạch lạnh giá.",
     rpg_attrs: {
       climate: "Lạnh giá quanh năm, sương mù ma pháp dày đặc đêm xuống.",
       ruler: "Nữ vương bộ tộc Tuyết Nhung - Kaelen Sương Tuyết.",
@@ -156,7 +156,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
   const [hoveredNode, setHoveredNode] = useState<any | null>(null);
   const [activeFilterIndicator, setActiveFilterIndicator] = useState<string | null>(null);
   
-  // New States for Remake
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchTips, setShowSearchTips] = useState(false);
   const [showGraph, setShowGraph] = useState(true);
@@ -168,6 +167,32 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
   const [showTemplates, setShowTemplates] = useState(false);
   const [showAIHuyenCo, setShowAIHuyenCo] = useState(false);
   const [layoutStyle, setLayoutStyle] = useState<'cards' | 'dense'>('cards');
+
+  // AI Logic Optimization states
+  const [complianceScan, setComplianceScan] = useState(true);
+  const [multiTrigger, setMultiTrigger] = useState(true);
+  const [antiDrift, setAntiDrift] = useState(false);
+  const [deepReasoning, setDeepReasoning] = useState(true);
+  const [optimizingState, setOptimizingState] = useState<'idle' | 'running' | 'success'>('idle');
+  const [optimizationProgress, setOptimizationProgress] = useState(0);
+
+  const handleOptimizeLogic = () => {
+    setOptimizingState('running');
+    setOptimizationProgress(5);
+    const interval = setInterval(() => {
+      setOptimizationProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setOptimizingState('success');
+          setTimeout(() => {
+            setOptimizingState('idle');
+          }, 3500);
+          return 100;
+        }
+        return prev + 20;
+      });
+    }, 120);
+  };
 
   // Load GraphRAG nodes and edges dynamically when graph View Mode is graphrag
   useEffect(() => {
@@ -194,14 +219,12 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         return;
       }
       
-      // Focus search bar if '/' is pressed when not writing in fields
       if (e.key === "/") {
         e.preventDefault();
         const searchInput = document.getElementById("smart-search-bar");
         searchInput?.focus();
       }
 
-      // Start new entry wizard when 'N' is pressed
       if (e.key === "n" || e.key === "N") {
         e.preventDefault();
         onAddManualWithTemplate?.({
@@ -216,27 +239,24 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onAddManualWithTemplate]);
 
-  // 1. Core Smart Search Parser
+  // Core Smart Search Parser
   const parsedSearchFilter = (item: VectorData): boolean => {
     if (!searchTerm.trim()) return true;
     
     const tokens = searchTerm.toLowerCase().split(/\s+/).filter(Boolean);
     
     return tokens.every(token => {
-      // Category prefix: e.g. @character
       if (token.startsWith('@')) {
         const cat = token.slice(1);
         return (item.category || '').toLowerCase() === cat;
       }
       
-      // Tag/Keyword: e.g. #cursed
       if (token.startsWith('#')) {
         const tag = token.slice(1);
         const keywords = item.keywords || [];
         return keywords.some(k => k.toLowerCase().includes(tag));
       }
       
-      // Priority parameters: e.g. p>50, p<70, p:60
       if (token.startsWith('p>') || token.startsWith('p<') || token.startsWith('p:')) {
         const op = token.charAt(1);
         const val = parseInt(token.slice(2));
@@ -247,13 +267,11 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         if (op === ':') return entryPriority === val;
       }
       
-      // Trigger mode: e.g. trigger:always
       if (token.startsWith('trigger:')) {
         const mode = token.slice(8);
         return (item.triggerMode || '').toLowerCase() === mode;
       }
 
-      // Status: e.g. status:enabled / status:disabled
       if (token.startsWith('status:')) {
         const stat = token.slice(7);
         const isEnabled = item.isEnabled !== false;
@@ -261,7 +279,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         if (stat === 'disabled' || stat === 'off') return !isEnabled;
       }
       
-      // Relations indicator: e.g. linked:true
       if (token.startsWith('linked:')) {
         const val = token.slice(7);
         const hasLinks = (item.relatedEntries || []).length > 0;
@@ -269,7 +286,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         if (val === 'false') return !hasLinks;
       }
       
-      // Default fuzzy search
       return (item.keyword || '').toLowerCase().includes(token) ||
              (item.text || '').toLowerCase().includes(token);
     });
@@ -285,29 +301,14 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
 
   // Convert priority to human-readable Tier
   const getPriorityTier = (pr: number = 50) => {
-    if (pr >= 90) return { label: "S Class", color: "text-red-500 border-red-500/30 bg-red-500/10" };
-    if (pr >= 75) return { label: "A Class", color: "text-amber-500 border-amber-500/30 bg-amber-500/10" };
-    if (pr >= 50) return { label: "B Class", color: "text-violet-500 border-violet-500/30 bg-violet-500/10" };
-    if (pr >= 30) return { label: "C Class", color: "text-sky-500 border-sky-500/30 bg-sky-500/10" };
-    return { label: "D Class", color: "text-stone-400 border-stone-400/20 bg-stone-500/5" };
+    if (pr >= 90) return { label: "S Class", color: "text-red-400 border-red-500/20 bg-red-500/10 shadow-[1px_1px_3px_#04060b]" };
+    if (pr >= 75) return { label: "A Class", color: "text-amber-400 border-amber-500/20 bg-amber-500/10 shadow-[1px_1px_3px_#04060b]" };
+    if (pr >= 50) return { label: "B Class", color: "text-violet-400 border-violet-500/20 bg-violet-500/10 shadow-[1px_1px_3px_#04060b]" };
+    if (pr >= 30) return { label: "C Class", color: "text-sky-400 border-sky-500/20 bg-sky-500/10 shadow-[1px_1px_3px_#04060b]" };
+    return { label: "D Class", color: "text-zinc-400 border-zinc-500/10 bg-zinc-500/5 shadow-[1px_1px_3px_#04060b]" };
   };
 
-  // Render priority ASCII/visual bar
-  const renderPriorityBar = (pr: number = 50) => {
-    const blocks = Math.min(10, Math.ceil(pr / 10));
-    const empty = 10 - blocks;
-    return (
-      <div className="flex items-center gap-1 text-[10px] font-mono tracking-tighter text-[#eae3d2]/60 select-none">
-        <span>██████████</span>
-        <div className="flex gap-[1px] bg-stone-900 border border-stone-800 p-[2px] rounded h-3.5 items-center w-24">
-          <div className="bg-[#c9a84c] h-full rounded-sm" style={{ width: `${pr}%` }} />
-        </div>
-        <span className="font-bold text-[#c9a84c]">P:{pr}</span>
-      </div>
-    );
-  };
-
-  // 2. Health Check Diagnostic Engine
+  // Health Check Diagnostic Engine
   const healthChecks = useMemo(() => {
     const issues: Array<{ id: string; type: "error" | "warning" | "info"; msg: string; target: string }> = [];
     const keywordMap: Record<string, string[]> = {};
@@ -315,7 +316,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
     entries.forEach(item => {
       const isEnabled = item.isEnabled !== false;
       
-      // A. Empty Trigger keywords
       if (item.triggerMode !== 'always' && (!item.keywords || item.keywords.length === 0) && (!item.keyword)) {
         issues.push({
           id: `no-kw-${item.id}`,
@@ -325,7 +325,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         });
       }
 
-      // B. Oversized entries (token waste danger)
       const byteLen = (item.text || '').length;
       if (byteLen > 4000) {
         issues.push({
@@ -336,7 +335,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         });
       }
 
-      // C. High Priority but disabled
       if (!isEnabled && (item.priority || 50) >= 80) {
         issues.push({
           id: `hi-disabled-${item.id}`,
@@ -346,7 +344,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         });
       }
 
-      // D. Isolated items
       if (isEnabled && (!item.relatedEntries || item.relatedEntries.length === 0)) {
         issues.push({
           id: `isolated-${item.id}`,
@@ -356,7 +353,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         });
       }
 
-      // E. Check duplicates
       const kws = [...(item.keywords || [])];
       if (item.keyword) kws.push(item.keyword);
       kws.forEach(kw => {
@@ -374,17 +370,16 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
           id: `dup-kw-${kw}`,
           type: "warning",
           msg: `Từ khóa "${kw}" bị trùng lặp kích hoạt chéo giữa các bài viết: [${items.join(', ')}]`,
-          target: `Khớp chéo #${kw}`
+          target: `Khắp chéo #${kw}`
         });
       }
     });
 
-    return issues.slice(0, 10); // Limit to top 10 actionable diagnostic indicators
+    return issues.slice(0, 10);
   }, [entries]);
 
-  // 3. Token Budget Visualizer Calculations
+  // Token Budget Visualizer Calculations
   const tokenStatistics = useMemo(() => {
-    // 3.8 char per token average for custom Vietnamese context
     const getTokens = (text: string) => Math.ceil((text || '').length / 3.8);
 
     const alwaysEntriesBytes = entries
@@ -397,7 +392,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
 
     const alwaysTokens = getTokens(alwaysEntriesBytes);
     const potentialTokens = getTokens(potentialPoolBytes);
-    const budgetLimit = 8000; // Standard reference limit
+    const budgetLimit = 8000;
     const percentage = Math.min(100, Math.round((alwaysTokens / budgetLimit) * 100));
 
     return {
@@ -409,17 +404,16 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
     };
   }, [entries]);
 
-  // 4. Stable Node Coordinates inside Clustered Circular Graph View
+  // Stable Node Coordinates inside Clustered Circular Graph View
   const cosmosNodes = useMemo(() => {
     if (entries.length === 0) return [];
 
-    const visibleEntries = entries.slice(0, 18); // limit top nodes
+    const visibleEntries = entries.slice(0, 18);
     const n = visibleEntries.length;
     const centerX = 200;
     const centerY = 180;
 
     return visibleEntries.map((entry, index) => {
-      // Grouping clusters based on category
       const hashCategory = (entry.category || 'world').charCodeAt(0) % 5;
       const angle = (index * 2 * Math.PI) / n;
       const radius = 100 + (hashCategory * 15) + (index % 2 === 0 ? 15 : -15);
@@ -439,7 +433,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
     });
   }, [entries]);
 
-  // Compute connections beautifully
+  // Compute connections
   const cosmosLinks = useMemo(() => {
     const links: { x1: number; y1: number; x2: number; y2: number; id: string; strong: boolean }[] = [];
     if (cosmosNodes.length < 2) return [];
@@ -473,14 +467,14 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
         }
       }
     }
-    return links.slice(0, 40); // cap connections beautifully
+    return links.slice(0, 40);
   }, [cosmosNodes]);
 
   // Stable Node Coordinates inside Clustered Circular Graph View for GraphRAG
   const ragNodes = useMemo(() => {
     if (graphNodes.length === 0) return [];
 
-    const visibleNodes = graphNodes.slice(0, 24); // Show top 24 extracted nodes for performance & readability
+    const visibleNodes = graphNodes.slice(0, 24);
     const n = visibleNodes.length;
     const centerX = 200;
     const centerY = 180;
@@ -505,7 +499,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
     });
   }, [graphNodes]);
 
-  // Compute GraphRAG connections beautifully
+  // Compute GraphRAG connections
   const ragLinks = useMemo(() => {
     const links: { x1: number; y1: number; x2: number; y2: number; id: string; relationship: string; description: string }[] = [];
     if (ragNodes.length < 2) return [];
@@ -532,7 +526,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
 
   // Stars coordinates for realistic star field background inside the map
   const starsField = useMemo(() => {
-    const arr = [];
+    const arr: { cx: number; cy: number; r: number; opacity: number }[] = [];
     let seed = 42;
     const pseudoRandom = () => {
       const x = Math.sin(seed++) * 10000;
@@ -564,338 +558,341 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
   }, [activeTemplateTab]);
 
   return (
-    <div id="encyclopedia-manager-root" className="flex-1 flex flex-col h-full bg-[#020617] text-slate-100 overflow-y-auto custom-scrollbar relative font-sans selection:bg-sky-500/20 selection:text-sky-200">
-      {/* Subtle dynamic background glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-950/15 via-transparent to-transparent pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-indigo-950/10 via-transparent to-transparent pointer-events-none" />
-      <div className="absolute inset-0 bg-repeat bg-center opacity-[0.03] pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/stardust.png')" }} />
+    <div 
+      id="encyclopedia-manager-root" 
+      className="flex-1 flex flex-col h-full bg-[#0d1220] text-slate-100 overflow-y-auto custom-scrollbar relative font-sans selection:bg-sky-500/20 selection:text-sky-200 p-4 lg:p-6"
+    >
+      {/* Absolute Noise Texture for depth */}
+      <div 
+        className="absolute inset-0 bg-repeat bg-center opacity-[0.015] pointer-events-none" 
+        style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/dark-matter.png')" }} 
+      />
       
-      <div className="max-w-6xl mx-auto w-full p-4 lg:p-6 space-y-6 pb-20 relative z-10">
+      <div className="max-w-7xl mx-auto w-full space-y-8 pb-20 relative z-10">
         
-        {/* Ancient Tome Styled Header Title Block */}
-        <div className="text-center py-6 border-b border-sky-950/40 bg-gradient-to-b from-sky-950/5 to-transparent rounded-2xl p-4">
-          <h1 className="font-sans text-3xl lg:text-4xl font-extrabold tracking-wide uppercase flex items-center justify-center gap-3 select-none bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-300 to-sky-300 drop-shadow-[0_0_15px_rgba(56,189,248,0.2)]">
-            <BookOpen size={30} className="text-sky-400" />
-            Thư Khố Vũ Trụ
-          </h1>
-          <p className="font-mono text-xs text-indigo-400/80 mt-2 tracking-[0.2em] uppercase font-bold">
-            Mạng Lưới Thần Thức Cốt Truyện • Lore Constellations Dashboard
-          </p>
-        </div>
-
-        {/* Quick Panel Controllers / Layout customization toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0d1527]/70 border border-slate-800/80 p-3 rounded-2xl select-none shadow-xl backdrop-blur-md">
-          <div className="flex items-center gap-2">
-            <Sparkles size={14} className="text-sky-400 animate-pulse" />
-            <span className="font-sans text-xs font-extrabold text-slate-300 uppercase tracking-widest">
-              KIẾN TRÚC THƯ VIỆN:
-            </span>
+        {/* Visual Title Header Block - Premium extruded Neumorphic structure */}
+        <div 
+          id="portal-header-banner"
+          className="p-6 md:p-8 bg-[#0d1220] rounded-[32px] shadow-[8px_8px_16px_#04060c,_-8px_-8px_16px_#161e35] border border-[#1b253b]/20 flex flex-col xl:flex-row items-center justify-between gap-6 transition-all"
+        >
+          <div className="text-center xl:text-left">
+            <h1 className="font-sans text-2xl lg:text-3xl font-black tracking-wider uppercase flex items-center justify-center xl:justify-start gap-3 select-none text-sky-400">
+              <BookOpen size={28} className="text-sky-400 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]" />
+              THƯ KHỐ VŨ TRỤ
+            </h1>
+            <p className="font-mono text-[9px] text-slate-400 mt-1 uppercase tracking-widest font-extrabold flex items-center gap-1.5 justify-center xl:justify-start">
+              <span>Đại Học Giới Thiết Lập</span>
+              <span className="text-sky-500/50">•</span>
+              <span className="text-sky-455">Tactile Neumorphic Encyclopedia Portal</span>
+            </p>
           </div>
-          <div className="flex flex-wrap gap-1.5">
+          
+          {/* Main Controls - Flat soft sunken dock with extruded buttons */}
+          <div className="flex flex-wrap items-center justify-center gap-2 bg-[#090d18] p-2 rounded-2xl shadow-[inset_3px_3px_6px_#04050a,_inset_-3px_-3px_6.5px_#121b2d] border border-[#141b2c]/20 shrink-0 select-none">
             <button
               onClick={() => setShowGraph(!showGraph)}
-              className={`px-3 py-1 text-xs font-bold font-mono uppercase rounded-xl border transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 text-[9px] font-mono font-bold uppercase rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer touch-manipulation text-center ${
                 showGraph
-                  ? "bg-sky-500/15 text-sky-300 border-sky-400/50 shadow-[0_0_10px_rgba(58,191,248,0.15)] bg-slate-900/60"
-                  : "text-slate-400 border-slate-800/80 hover:bg-slate-900/40 hover:text-slate-200"
+                  ? "bg-[#0d1220] text-sky-400 shadow-[2px_2px_4px_#04050a,_-2px_-2px_4px_#161e35] border border-[#152342]/20"
+                  : "text-slate-400 hover:text-slate-250 border border-transparent"
               }`}
             >
-              <Compass size={12} className={showGraph ? "animate-spin-slow text-sky-400" : ""} />
-              Constellation {showGraph ? "• ON" : "• OFF"}
+              <Compass size={12} className={showGraph ? "animate-[spin_24s_linear_infinite] text-sky-400" : ""} />
+              Mạng Lưới {showGraph ? "BẬT" : "TẮT"}
             </button>
 
             <button
               onClick={() => setShowTemplates(!showTemplates)}
-              className={`px-3 py-1 text-xs font-bold font-mono uppercase rounded-xl border transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 text-[9px] font-mono font-bold uppercase rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer touch-manipulation text-center ${
                 showTemplates
-                  ? "bg-indigo-500/15 text-indigo-300 border-indigo-500/35 shadow-[0_0_10px_rgba(139,92,246,0.15)] bg-slate-900/60"
-                  : "text-slate-400 border-slate-800/80 hover:bg-slate-900/40 hover:text-slate-200"
+                  ? "bg-[#0d1220] text-indigo-400 shadow-[2px_2px_4px_#04050a,_-2px_-2px_4px_#161e35] border border-[#1d1b46]/20"
+                  : "text-slate-400 hover:text-slate-250 border border-transparent"
               }`}
             >
               <Award size={12} className={showTemplates ? "text-indigo-400" : ""} />
-              Tài Liệu Mẫu {showTemplates ? "• ON" : "• OFF"}
+              Mẫu Điển {showTemplates ? "BẬT" : "TẮT"}
             </button>
 
             <button
               onClick={() => setShowAIHuyenCo(!showAIHuyenCo)}
-              className={`px-3 py-1 text-xs font-bold font-mono uppercase rounded-xl border transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 text-[9px] font-mono font-bold uppercase rounded-xl transition-all duration-300 flex items-center gap-1.5 cursor-pointer touch-manipulation text-center ${
                 showAIHuyenCo
-                  ? "bg-purple-500/15 text-purple-300 border-purple-500/35 shadow-[0_0_10px_rgba(168,85,247,0.15)] bg-slate-900/60"
-                  : "text-slate-400 border-slate-800/80 hover:bg-slate-900/40 hover:text-slate-200"
+                  ? "bg-[#0d1220] text-purple-400 shadow-[2px_2px_4px_#04050a,_-2px_-2px_4px_#161e35] border border-[#3e1e55]/20"
+                  : "text-slate-400 hover:text-slate-250 border border-transparent"
               }`}
             >
               <Activity size={12} className={showAIHuyenCo ? "text-purple-400 animate-pulse" : ""} />
-              Huyền Cơ {showAIHuyenCo ? "• ON" : "• OFF"}
+              Chẩn Đoán Logic {showAIHuyenCo ? "ON" : "OFF"}
             </button>
 
-            <div className="w-px h-5 bg-slate-800 mx-1 self-center" />
+            <div className="w-[1px] h-4 bg-slate-800/60 mx-1.5 self-center" />
 
             <button
               onClick={() => setLayoutStyle(layoutStyle === 'cards' ? 'dense' : 'cards')}
-              className="px-3 py-1 text-xs font-bold font-mono uppercase rounded-xl border bg-slate-950 text-sky-400 border-slate-800 hover:border-sky-500/40 hover:text-sky-300 transition-all flex items-center gap-1.5"
+              className="px-4 py-2 text-[9px] font-mono font-bold uppercase rounded-xl bg-[#0d1220] text-sky-400 shadow-[2px_2px_4px_#04050a,_-2px_-2px_4px_#161e35] hover:text-sky-300 border border-[#141b2c]/20 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              {layoutStyle === 'cards' ? <LayoutGrid size={11} className="text-sky-400" /> : <List size={11} className="text-sky-400" />}
-              :{layoutStyle === 'cards' ? "Lưới Dịch Giả" : "Mật Danh Thu"}
+              {layoutStyle === 'cards' ? <LayoutGrid size={11} /> : <List size={11} />}
+              <span>{layoutStyle === 'cards' ? "Dạng Lưới" : "Thu Gọn"}</span>
             </button>
           </div>
         </div>
 
-        {/* Diagnostic Monitors Panel (Unified health-and-budget layout) - Conditional */}
-        {showAIHuyenCo && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch animate-fadeIn">
-            
-            {/* Health Diagnostics Panel (7 Cols) */}
-            <div className="md:col-span-7 bg-[#090f23]/70 rounded-2xl border border-sky-950/50 p-5 flex flex-col justify-between shadow-2xl relative backdrop-blur-md">
-              <div className="absolute top-0 right-0 p-3 opacity-15">
-                <Activity size={40} className="text-sky-400" />
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-sans text-sm font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
-                  <AlertCircle size={16} className="text-sky-400" />
-                  Chuẩn Đoán Đột Phá Bộ Nhớ (Health-Check)
-                </h3>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Hệ thống tự động phát hiện mâu thuẫn từ khóa, kích thước tệp, và cấu hình cảm ứng để AI đạt hiệu năng mượt nhất.
-                </p>
+        {/* Overview Portal Section - 4 Column Neumorphic Stats Tiles Grid */}
+        <div id="portal-overview-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 select-none">
+          {/* Tile 1: Total Entries */}
+          <div className="bg-[#0d1220] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 shadow-[6px_6px_12px_#04060c,_-6px_-6px_12px_#161e35] border border-[#1b253b]/20 flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono font-extrabold uppercase text-slate-400 tracking-wider">Tổng bách khoa</span>
+              <BookOpen className="text-sky-400 w-4 h-4" />
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-slate-100">{entries.length}</span>
+              <span className="text-[10px] font-mono font-bold text-slate-500">cổ bản</span>
+            </div>
+            <div className="mt-2 text-[8.5px] font-sans font-bold text-emerald-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Đã lập chỉ mục cục bộ
+            </div>
+          </div>
 
-                {/* Diagnostic Log lines */}
-                <div className="border border-sky-950/40 bg-slate-950/80 rounded-xl p-3.5 max-h-[190px] overflow-y-auto custom-scrollbar space-y-2.5 text-[11px] font-mono">
-                  {healthChecks.length === 0 ? (
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold py-4 justify-center">
-                      <CheckCircle size={16} />
-                      <span>✓ Thư khố hoàn toàn khỏe mạnh, không có mâu thuẫn tri thức!</span>
-                    </div>
-                  ) : (
-                    healthChecks.map((issue) => (
-                      <div key={issue.id} className="flex items-start gap-2 border-b border-slate-900/30 pb-2 last:border-0 last:pb-0">
-                        {issue.type === "error" ? (
-                          <span className="text-red-500 shrink-0 mt-0.5">⬤</span>
-                        ) : issue.type === "warning" ? (
-                          <span className="text-amber-500 shrink-0 mt-0.5">▲</span>
-                        ) : (
-                          <span className="text-sky-400 shrink-0 mt-0.5">◆</span>
-                        )}
-                        <div>
-                          <span className="text-sky-400 font-black underline mr-1.5 font-sans">
-                            [{issue.target}]:
-                          </span>
-                          <span className="text-slate-200">{issue.msg}</span>
-                        </div>
-                      </div>
-                    ))
+          {/* Tile 2: High Priority (S-Class) */}
+          <div className="bg-[#0d1220] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 shadow-[6px_6px_12px_#04060c,_-6px_-6px_12px_#161e35] border border-[#1b253b]/20 flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono font-extrabold uppercase text-slate-400 tracking-wider">Trọng điểm bậc S</span>
+              <Award className="text-red-400 w-4 h-4 animate-pulse" />
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-red-405">{entries.filter(e => e.isEnabled !== false && (e.priority || 50) >= 80).length}</span>
+              <span className="text-[10px] font-mono font-bold text-slate-500">khối bối cảnh</span>
+            </div>
+            <div className="mt-2 text-[8.5px] font-sans font-bold text-red-450">
+              Sẵn sàng truyền tư duy cốt lõi
+            </div>
+          </div>
+
+          {/* Tile 3: Always Active (Always-ON) */}
+          <div className="bg-[#0d1220] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 shadow-[6px_6px_12px_#04060c,_-6px_-6px_12px_#161e35] border border-[#1b253b]/20 flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono font-extrabold uppercase text-slate-400 tracking-wider">Thức thường trực</span>
+              <Pin className="text-amber-400 w-4 h-4" />
+            </div>
+            <div className="mt-4 flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-amber-400">{entries.filter(e => e.isEnabled !== false && e.triggerMode === 'always').length}</span>
+              <span className="text-[10px] font-mono font-bold text-slate-500">mũi chỉ định</span>
+            </div>
+            <div className="mt-2 text-[8.5px] font-sans font-bold text-amber-500/90 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+              Luôn ở trong khung đệm
+            </div>
+          </div>
+
+          {/* Tile 4: Energy Memory Gauge */}
+          <div className="bg-[#0d1220] rounded-2xl sm:rounded-[24px] p-4 sm:p-5 shadow-[6px_6px_12px_#04060c,_-6px_-6px_12px_#161e35] border border-[#1b253b]/20 flex flex-col justify-between group hover:scale-[1.02] transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-mono font-extrabold uppercase text-slate-400 tracking-wider">Bộ đệm tối đa</span>
+              <Cpu className="text-purple-400 w-4 h-4" />
+            </div>
+            <div className="mt-4 flex items-baseline gap-1.5">
+              <span className={`text-xl sm:text-2xl font-black ${tokenStatistics.isDanger ? 'text-red-450' : 'text-sky-400'}`}>
+                {tokenStatistics.percentage}%
+              </span>
+              <span className="text-[10px] font-mono font-bold text-slate-500">
+                ({tokenStatistics.activeTokens.toLocaleString()} TKn)
+              </span>
+            </div>
+            <div className="mt-2">
+              <div className="w-full h-1.5 bg-[#090d18] rounded-full p-[1px] border border-[#141b2c]/10 shadow-inner">
+                <div 
+                  className={`h-full rounded-full ${tokenStatistics.isDanger ? 'bg-red-500' : 'bg-gradient-to-r from-sky-500 to-indigo-500'}`}
+                  style={{ width: `${tokenStatistics.percentage}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Central Search, Tags and Shortcuts Station */}
+        <div className="bg-[#0d1220] rounded-[28px] shadow-[8px_8px_16px_#04060c,_-8px_-8px_16px_#161e35] p-6 border border-[#1b253b]/20 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            {/* Left Search input Box */}
+            <div className="lg:col-span-7 space-y-1.5 text-left">
+              <label htmlFor="smart-search-bar" className="text-[10px] font-mono font-black uppercase text-slate-400 tracking-widest pl-1">
+                Tìm kiếm tích hợp đa ký tự liên hội
+              </label>
+              <div className="relative">
+                <div className="bg-[#090d18] rounded-2xl shadow-[inset_4px_4px_8px_#04060c,_inset_-4px_-4px_8px_#161e35] border border-[#141b2c]/10 flex items-center px-4 py-3.5 w-full">
+                  <Search size={18} className="text-sky-400 mr-3 shrink-0" />
+                  <input
+                    id="smart-search-bar"
+                    type="text"
+                    placeholder="Nhập kí tự lẻ hoặc từ khóa, hoặc gõ '@character' '#thung-lung' 'p>65' 'status:on'..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full bg-transparent outline-none border-none text-slate-200 placeholder-slate-500 text-xs sm:text-sm font-sans font-semibold"
+                  />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="text-slate-500 hover:text-sky-400 transition-colors ml-2 pointer-events-auto touch-manipulation"
+                    >
+                      <X size={16} />
+                    </button>
                   )}
                 </div>
               </div>
-
-              <div className="pt-3 border-t border-slate-800/50 text-[10px] text-slate-400 flex items-center gap-2 mt-4">
-                <span className="inline-block w-2.5 h-2.5 rounded bg-red-500"></span> Lỗi Kích Hoạt
-                <span className="inline-block w-2.5 h-2.5 rounded bg-amber-500 ml-2"></span> Cảnh Báo Phì Đại
-                <span className="inline-block w-2.5 h-2.5 rounded bg-sky-400 ml-2"></span> Khuyên dùng
-              </div>
             </div>
 
-            {/* Token Budget Gauge Section (5 Cols) */}
-            <div className="md:col-span-5 bg-[#090f23]/70 rounded-2xl border border-sky-950/50 p-5 flex flex-col justify-between shadow-2xl relative backdrop-blur-md">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-sky-950/30 pb-2">
-                  <h3 className="font-sans text-sm font-bold text-sky-400 uppercase tracking-widest flex items-center gap-2">
-                    <BarChart4 size={16} className="text-sky-400" />
-                    Hao Phí Ngân Sách Token (Găm Sẵn)
-                  </h3>
-                  <span className="font-mono text-xs text-sky-400 font-bold">
-                    {tokenStatistics.activeTokens.toLocaleString()} / {tokenStatistics.limit.toLocaleString()} TK
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center text-[11px] font-mono text-slate-400">
-                    <span>Mức nạp tri thức gốc (Always & Pin)</span>
-                    <span>{tokenStatistics.percentage}%</span>
-                  </div>
-                  {/* Modern Interstellar Progress Bar */}
-                  <div className="w-full h-3 bg-slate-950 border border-slate-800/85 rounded-full overflow-hidden shadow-inner p-[2px]">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        tokenStatistics.isDanger 
-                          ? 'bg-gradient-to-r from-red-600 to-amber-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]' 
-                          : 'bg-gradient-to-r from-sky-600 to-indigo-500 shadow-[0_0_10px_rgba(56,189,248,0.3)]'
-                      }`}
-                      style={{ width: `${tokenStatistics.percentage}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5 text-[10px] font-mono pt-1 text-slate-300">
-                  <div className="bg-slate-950/70 p-2 rounded border border-slate-800/70">
-                    <span className="block text-slate-500 text-[8px] uppercase tracking-wider">Luôn Găm Sẵn</span>
-                    <span className="text-xs font-bold text-slate-200">{tokenStatistics.activeTokens.toLocaleString()} Tokens</span>
-                  </div>
-                  <div className="bg-slate-950/70 p-2 rounded border border-slate-800/70" title="Kích hoạt linh động, không chiếm cố định">
-                    <span className="block text-slate-500 text-[8px] uppercase tracking-wider">Cảm Biến Động</span>
-                    <span className="text-xs font-bold text-sky-400">{tokenStatistics.potentialTokens.toLocaleString()} Tokens</span>
-                  </div>
-                </div>
+            {/* Right Shortcuts & Actions Block */}
+            <div className="lg:col-span-5 flex flex-wrap gap-4 items-center justify-start lg:justify-end text-left">
+              <div className="text-[10px] font-mono text-slate-400 font-bold bg-[#0a0f1b]/50 px-3.5 py-2.5 rounded-2xl border border-[#141b2c]/10 shadow-inner flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-450 animate-pulse"></span>
+                <span>Ấn <kbd className="bg-[#04060c] text-sky-400 px-1 py-0.5 rounded font-bold shadow-sm">/</kbd> để Tìm • <kbd className="bg-[#04060c] text-sky-400 px-1 py-0.5 rounded font-bold shadow-sm">N</kbd> để Tạo Mới</span>
               </div>
 
-              <div className="text-[10px] text-slate-400 leading-normal pt-2.5 border-t border-slate-800/50 italic mt-4">
-                * Mẹo: Chỉ gỡ lỗi hoặc ghim (PIN) khi thật sự cần lưu trữ vĩnh viễn bối cảnh gốc của căn nguyên.
-              </div>
-            </div>
-
-          </div>
-        )}
-        <div className="bg-[#090f23]/80 border border-sky-950/60 rounded-2xl p-4.5 shadow-xl">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search size={18} className="text-sky-400" />
-            </div>
-            <input
-              id="smart-search-bar"
-              type="text"
-              placeholder="Gõ mã tìm kiếm bối cảnh dã sử... Cú pháp hỗ trợ: @character #mentor p>60 (Nhấn '/' để gõ nhanh)"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-950/80 border border-slate-800/80 outline-none text-slate-100 focus:border-sky-500/60 focus:shadow-[0_0_15px_rgba(58,191,248,0.12)] rounded-xl pl-12 pr-12 py-3.5 text-sm font-sans placeholder-slate-550 transition-all shadow-inner font-medium"
-            />
-            {searchTerm && (
               <button
-                onClick={() => setSearchTerm("")}
-                className="absolute inset-y-0 right-4 flex items-center justify-center text-slate-500 hover:text-sky-400 transition-colors"
+                onClick={() => onAddManualWithTemplate({
+                  category: "world",
+                  keyword: "",
+                  keywords: [],
+                  text: ""
+                })}
+                className="px-5 py-3.5 bg-[#0d1220] text-sky-400 font-sans font-black text-xs uppercase rounded-2xl shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] hover:shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#1d2a4c] active:shadow-[inset_2px_2px_4px_#04060c,_inset_-2px_-2px_4px_#161e35] hover:text-sky-300 transition-all cursor-pointer flex items-center gap-2 border border-[#1b253b]/20"
               >
-                <X size={16} />
+                <Plus size={14} /> Trực dệt cổ bản
               </button>
-            )}
-          </div>
-
-          {/* Smart Search tips collapsible bar */}
-          <div className="mt-2.5 px-1.5 flex justify-between items-center text-xs font-mono">
-            <button
-              onClick={() => setShowSearchTips(!showSearchTips)}
-              className="text-sky-400 hover:underline flex items-center gap-1 font-bold"
-            >
-              <HelpCircle size={12} /> {showSearchTips ? "✕ Thu nhỏ hướng dẫn tìm kiếm" : "❖ Hướng dẫn tìm kiếm thông minh"}
-            </button>
-            <span className="text-slate-400 text-xs">Đang hiển thị {filteredEntries.length} trong số {entries.length} cổ mẫu</span>
-          </div>
-
-          {showSearchTips && (
-            <div className="mt-3.5 bg-slate-950/90 border border-sky-950/65 rounded-xl p-4 text-xs font-mono space-y-2 text-slate-300 animate-slideDown">
-              <p className="font-bold text-sky-400 border-b border-sky-950/40 pb-1 flex items-center gap-1.5">
-                <Sparkles size={12} /> Cú pháp phân phối bối cảnh thông dụng:
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <span className="text-sky-400 font-black mr-2">@loại</span> 
-                  <span>Lọc loại mục: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">@character</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">@location</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">@faction</code></span>
-                </div>
-                <div>
-                  <span className="text-sky-400 font-black mr-2">#từ khóa</span>
-                  <span>Tìm từ khóa liên kết: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">#Galahad</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">#Sương</code></span>
-                </div>
-                <div>
-                  <span className="text-sky-400 font-black mr-2">p&gt;hệ / p&lt;hệ</span>
-                  <span>Lọc độ ưu tiên: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">p&gt;70</code> (Đầu mục quan trọng), <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">p&lt;30</code></span>
-                </div>
-                <div>
-                  <span className="text-sky-450 font-black mr-2">trigger:mode</span>
-                  <span>Luật logic cảm: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">trigger:always</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">trigger:hybrid</code></span>
-                </div>
-                <div>
-                  <span className="text-sky-450 font-black mr-2">status:state</span>
-                  <span>Tài nguyên bật tắt: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">status:enabled</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">status:disabled</code></span>
-                </div>
-                <div>
-                  <span className="text-sky-450 font-black mr-2">linked:bool</span>
-                  <span>Kiểm tra quan hệ kết nối: <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">linked:true</code>, <code className="bg-slate-900 text-sky-400 px-1 py-0.5 rounded">linked:false</code></span>
-                </div>
-              </div>
             </div>
-          )}
+          </div>
+
+          {/* Expanded Grid Category Filters: Large Neumorphic Interactive Tiles Block */}
+          <div className="space-y-3.5 pt-2 text-left">
+            <div className="flex justify-between items-center px-1">
+              <span className="text-[10px] font-mono font-black uppercase tracking-widest text-[#38bdf8]/90">
+                Phân Loại Thể Kỷ Tri Thức
+              </span>
+              {activeFilterIndicator && (
+                <button
+                  onClick={() => {
+                    onCategoryFilterChange(null);
+                    setActiveFilterIndicator(null);
+                  }}
+                  className="text-[9px] font-mono font-bold text-sky-400 hover:text-sky-300 uppercase tracking-widest flex items-center gap-1"
+                >
+                  ✕ Hủy bỏ tiêu điểm bách khoa
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4 select-none">
+              {Object.entries(CATEGORY_MAP).map(([catKey, catInfo]) => {
+                const count = entries.filter(e => e.category === catKey).length;
+                const isSelected = activeFilterIndicator === catKey;
+                const IconComp = catInfo.icon;
+
+                return (
+                  <button
+                    key={catKey}
+                    onClick={() => handleCategoryFilterClick(catKey)}
+                    className={`p-3.5 rounded-2xl text-center transition-all duration-300 flex flex-col items-center justify-center gap-2 relative overflow-hidden border cursor-pointer group ${
+                      isSelected
+                        ? "bg-[#0d1220] text-sky-400 border-sky-500/30 shadow-[inset_3px_3px_6px_#04050a,_inset_-3px_-3px_6px_#161e35]"
+                        : "bg-[#0d1220] border-[#1b253b]/20 text-slate-400 shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] hover:border-sky-500/20 hover:scale-[1.03]"
+                    }`}
+                  >
+                    <div className={`p-2 rounded-xl transition-all ${
+                      isSelected 
+                        ? "text-sky-400 bg-[#090d18] shadow-inner" 
+                        : "text-slate-400 bg-[#090d18]/40 group-hover:text-sky-400"
+                    }`}>
+                      <IconComp size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[8.5px] font-mono font-bold uppercase tracking-wider block truncate">
+                        {catInfo.label}
+                      </span>
+                      <span className="text-[10px] font-sans font-black text-slate-150 block mt-0.5">
+                        {count} bản
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Split Section: Graph view and templates */}
-        {(showGraph || showTemplates) && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch animate-fadeIn">
+        {/* Dual-Pane Modern Grid Architecture */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start text-left">
+          
+          {/* LEFT CONSOLE SIDEBAR: Starfield Constellation, Custom Logic Toggles & Mythos Presets */}
+          <div className="xl:col-span-5 space-y-8 xl:sticky xl:top-4">
             
-            {/* Interactive SVG Network Graph View */}
+            {/* NEUMORPHIC CONSTELLATION MAP/NETWORK BLOCK */}
             {showGraph && (
-              <div className={`${showTemplates ? "lg:col-span-7" : "lg:col-span-12"} bg-[#030712]/95 border border-sky-950/60 rounded-2xl p-5 flex flex-col min-h-[410px] shadow-2xl relative overflow-hidden`}>
-                <div className="flex flex-wrap items-center justify-between border-b border-sky-950/30 pb-3 mb-4 shrink-0 z-10 gap-2">
+              <div className="bg-[#0d1220] border border-[#1b253b]/20 rounded-[28px] shadow-[8px_8px_16px_#04060c,_-8px_-8px_16px_#161e35] p-6 flex flex-col min-h-[440px] relative overflow-hidden select-none">
+                
+                {/* Header view toggle row */}
+                <div className="flex items-center justify-between border-b border-[#141b2c]/20 pb-4 mb-4 shrink-0 z-10">
                   <div className="flex items-center gap-2">
-                    <Compass size={15} className={`text-sky-450 ${graphViewMode === 'graphrag' ? 'text-purple-400 animate-[spin_12s_linear_infinite]' : 'animate-spin-slow text-sky-400'}`} />
-                    <h3 className="font-sans text-xs font-bold text-sky-305 uppercase tracking-widest flex items-center gap-2">
-                      {graphViewMode === 'graphrag' ? "Mạng Lưới Thần Hệ (GraphRAG)" : "Bản Đồ Thiên Hà Sáng Tạo (Constellation)"}
+                    <Compass size={14} className={`text-sky-400 ${graphViewMode === 'graphrag' ? 'text-purple-400 animate-[spin_32s_linear_infinite]' : 'animate-[spin_120s_linear_infinite]'}`} />
+                    <h3 className="font-sans text-[10px] font-black text-sky-400 uppercase tracking-widest">
+                      {graphViewMode === 'graphrag' ? "MỘT BẢN THƯ THỰC THỂ (GRAPHRAG)" : "TINH ĐỒ BỐI CẢNH (CONSTELLATION)"}
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    {/* Graph View Switcher Category */}
-                    <div className="flex items-center gap-1 bg-slate-950 border border-slate-800/80 p-0.5 rounded-lg">
-                      <button
-                        onClick={() => {
-                          setGraphViewMode('constellation');
-                          setHoveredNode(null);
-                        }}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider transition-all duration-200 ${
-                          graphViewMode === 'constellation'
-                            ? 'bg-sky-500/15 text-sky-400 font-bold border border-sky-500/10'
-                            : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        Thư Lâm Bản
-                      </button>
-                      <button
-                        onClick={() => {
-                          setGraphViewMode('graphrag');
-                          setHoveredNode(null);
-                        }}
-                        className={`px-2.5 py-1 rounded-md text-[10px] font-mono uppercase tracking-wider transition-all duration-200 ${
-                          graphViewMode === 'graphrag'
-                            ? 'bg-purple-500/15 text-purple-400 font-bold border border-purple-500/10'
-                            : 'text-slate-400 hover:text-slate-200'
-                        }`}
-                      >
-                        Mạng GraphRAG
-                      </button>
-                    </div>
-
-                    <button 
-                      onClick={() => setShowGraph(!showGraph)}
-                      className="text-[10px] font-mono bg-slate-950 border border-slate-800/85 px-2 py-1 rounded-md text-sky-400 hover:bg-sky-500/10 transition-colors"
+                  {/* Neumorphic view mode tab slider */}
+                  <div className="flex bg-[#090d18] border border-[#141b2c]/10 p-1 rounded-xl shadow-inner shrink-0">
+                    <button
+                      onClick={() => {
+                        setGraphViewMode('constellation');
+                        setHoveredNode(null);
+                      }}
+                      className={`px-3 py-1.5 text-[8px] font-mono font-black uppercase rounded-lg transition-all cursor-pointer ${
+                        graphViewMode === 'constellation'
+                          ? 'bg-[#0d1220] text-sky-400 shadow-[1px_1px_3px_rgba(0,0,0,0.65)]'
+                          : 'text-slate-450 hover:text-slate-200'
+                      }`}
                     >
-                      Bản Đồ ✕
+                      Bản Đồ Cố Định
+                    </button>
+                    <button
+                      onClick={() => {
+                        setGraphViewMode('graphrag');
+                        setHoveredNode(null);
+                      }}
+                      className={`px-3 py-1.5 text-[8px] font-mono font-black uppercase rounded-lg transition-all cursor-pointer ${
+                        graphViewMode === 'graphrag'
+                          ? 'bg-[#0d1220] text-purple-400 shadow-[1px_1px_3px_rgba(0,0,0,0.65)]'
+                          : 'text-slate-450 hover:text-slate-200'
+                      }`}
+                    >
+                      GraphRAG
                     </button>
                   </div>
                 </div>
 
+                {/* Starfield Render Arena */}
                 {(graphViewMode === 'graphrag' ? graphNodes.length === 0 : entries.length === 0) ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-slate-950/40 rounded-xl border border-dashed border-slate-800 my-4">
-                    <svg className={`w-24 h-24 opacity-25 mb-3 ${graphViewMode === 'graphrag' ? 'text-purple-400 animate-[spin_120s_linear_infinite]' : 'text-sky-400 animate-[spin_180s_linear_infinite]'}`} viewBox="0 0 100 100">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-[#090d18] rounded-2xl border border-dashed border-[#141b2c]/15 my-2 shadow-inner">
+                    <svg className={`w-16 h-16 opacity-25 mb-4 ${graphViewMode === 'graphrag' ? 'text-purple-400 animate-[spin_80s_linear_infinite]' : 'text-sky-400 animate-[spin_120s_linear_infinite]'}`} viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="1 3" />
                       <circle cx="50" cy="50" r="25" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 2" />
-                      <circle cx="30" cy="30" r="1" fill="currentColor" />
-                      <circle cx="70" cy="65" r="1.5" fill="currentColor" />
                     </svg>
-                    <h4 className={`font-sans font-bold text-xs uppercase tracking-widest mb-1 ${graphViewMode === 'graphrag' ? 'text-purple-400' : 'text-sky-400'}`}>
-                      {graphViewMode === 'graphrag' ? "Không có dã văn GraphRAG" : "Thiên hà tinh vân trống rạng"}
+                    <h4 className="font-sans font-black text-[10px] uppercase tracking-wider text-sky-400">
+                      Thư Tự Tuyến Hoang Dã
                     </h4>
-                    <p className="text-[11px] text-slate-405 max-w-[280px] leading-relaxed">
-                      {graphViewMode === 'graphrag' 
-                        ? "Hệ thống GraphRAG chưa có ghi nhận hay liên kết thực thể nào trong bộ nhớ. Hãy giao tiếp với NPC dã sử để tự động khởi tạo đồ thị!"
-                        : "Bơm thử khố mẫu bối cảnh bên phải hoặc khởi tạo các mốc thế giới để thắp sáng thiên mạng cốt truyện dã sử!"}
+                    <p className="text-[9px] text-slate-500 max-w-[210px] mt-1.5 leading-relaxed">
+                      Chưa cảm biến thấy cổ thư tương thích. Hãy tạo lập thêm Thư tịch bồi đắp địa hạt bối cảnh!
                     </p>
                   </div>
                 ) : (
-                  <div className="flex-1相对 relative w-full h-[330px] select-none flex items-center justify-center">
-                    {/* Loader overlay */}
+                  <div className="flex-1 relative w-full h-[320px] rounded-2xl bg-[#090d18] border border-[#141b2c]/10 shadow-inner flex items-center justify-center overflow-hidden">
                     {isLoadingGraph && (
-                      <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center z-10 backdrop-blur-xs">
+                      <div className="absolute inset-0 bg-[#0d1220]/80 flex items-center justify-center z-20 rounded-2xl">
                         <RefreshCw className="animate-spin text-purple-400" size={24} />
                       </div>
                     )}
 
-                    <svg className="w-full h-full min-h-[330px] max-h-[350px]" viewBox="0 0 400 360">
+                    <svg className="w-full h-full min-h-[320px]" viewBox="0 0 400 360">
                       <defs>
                         <filter id="galaxyGlow" x="-50%" y="-50%" width="200%" height="200%">
                           <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
@@ -919,30 +916,28 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                           cy={s.cy}
                           r={s.r}
                           fill={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"}
-                          opacity={s.opacity * 0.5}
+                          opacity={s.opacity * 0.6}
                         />
                       ))}
 
-                      {/* Ring orbits reference */}
-                      <circle cx="200" cy="180" r="115" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.06" strokeWidth="1" strokeDasharray="3 6" />
-                      <circle cx="200" cy="180" r="150" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.03" strokeWidth="0.5" />
-                      <circle cx="200" cy="180" r="70" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.06" strokeWidth="0.5" strokeDasharray="1 3" />
+                      <circle cx="200" cy="180" r="115" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.08" strokeWidth="1" strokeDasharray="3 6" />
+                      <circle cx="200" cy="180" r="150" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.04" strokeWidth="0.5" />
+                      <circle cx="200" cy="180" r="70" fill="none" stroke={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} strokeOpacity="0.08" strokeWidth="0.5" strokeDasharray="1 3" />
 
-                      {/* Draw Links */}
+                      {/* Connection wires */}
                       {graphViewMode === 'graphrag' ? (
                         <g>
                           {ragLinks.map((link) => (
-                            <g key={link.id}>
-                              <line
-                                x1={link.x1}
-                                y1={link.y1}
-                                x2={link.x2}
-                                y2={link.y2}
-                                stroke="#c084fc"
-                                strokeOpacity="0.18"
-                                strokeWidth="1"
-                              />
-                            </g>
+                            <line
+                              key={link.id}
+                              x1={link.x1}
+                              y1={link.y1}
+                              x2={link.x2}
+                              y2={link.y2}
+                              stroke="#c084fc"
+                              strokeOpacity="0.22"
+                              strokeWidth="1.5"
+                            />
                           ))}
                         </g>
                       ) : (
@@ -955,21 +950,20 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                               x2={link.x2}
                               y2={link.y2}
                               stroke={link.strong ? "#38bdf8" : "#818cf8"}
-                              strokeOpacity={link.strong ? "0.25" : "0.1"}
-                              strokeWidth={link.strong ? "1.5" : "0.8"}
+                              strokeOpacity={link.strong ? "0.32" : "0.12"}
+                              strokeWidth={link.strong ? "1.8" : "1"}
                               strokeDasharray={link.strong ? "0" : "2 2"}
                             />
                           ))}
                         </g>
                       )}
 
-                      {/* Draw Nodes */}
+                      {/* Nodes */}
                       {graphViewMode === 'graphrag' ? (
                         <g>
                           {ragNodes.map((node) => {
                             const isNodeHovered = hoveredNode && hoveredNode.id === node.id;
                             
-                            // Color scheme for GraphRAG label
                             const labelLower = node.label.toLowerCase();
                             const nodeColor = labelLower.includes('person') || labelLower.includes('char') || labelLower.includes('người') || labelLower.includes('nhân') ? "#38bdf8" :
                                               labelLower.includes('loc') || labelLower.includes('địa') || labelLower.includes('nơi') ? "#34d399" :
@@ -987,32 +981,32 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                                 <circle
                                   cx={node.cx}
                                   cy={node.cy}
-                                  r={isNodeHovered ? 12 : 9}
+                                  r={isNodeHovered ? 13 : 9}
                                   fill="none"
                                   stroke={nodeColor}
                                   strokeWidth="1.5"
-                                  strokeOpacity={isNodeHovered ? "0.7" : "0.25"}
+                                  strokeOpacity={isNodeHovered ? "0.8" : "0.35"}
                                   className="transition-all duration-300"
                                 />
                                 <circle
                                   cx={node.cx}
                                   cy={node.cy}
-                                  r={6}
+                                  r={6.5}
                                   fill={nodeColor}
                                   className="transition-all duration-200"
                                 />
                                 <circle
                                   cx={node.cx}
                                   cy={node.cy}
-                                  r="1.5"
+                                  r="2"
                                   fill="#ffffff"
                                 />
                                 <text
                                   x={node.cx}
-                                  y={node.cy + 16}
+                                  y={node.cy + 17}
                                   textAnchor="middle"
                                   fill={isNodeHovered ? "#d8b4fe" : "#94a3b8"}
-                                  className="text-[9px] font-mono pointer-events-none select-none transition-colors"
+                                  className="text-[8px] font-mono font-bold pointer-events-none select-none transition-colors"
                                 >
                                   {node.name.length > 10 ? `${node.name.slice(0, 9)}…` : node.name}
                                 </text>
@@ -1025,7 +1019,6 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                           {cosmosNodes.map((node) => {
                             const isNodeHovered = hoveredNode && hoveredNode.id === node.id;
                             
-                            // Theme-aligned Node Colors
                             const colorHex = node.category === "character" ? "#38bdf8" :
                                              node.category === "location" ? "#34d399" :
                                              node.category === "faction" ? "#a78bfa" :
@@ -1034,10 +1027,9 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                                              node.category === "relationship" ? "#f472b6" :
                                              node.category === "law" ? "#818cf8" : "#38bdf8";
 
-                            // Priority sizes
                             const sizeMultiplier = node.priority >= 90 ? 8 :
-                                                   node.priority >= 75 ? 6.5 :
-                                                   node.priority >= 50 ? 5.5 : 4.5;
+                                                    node.priority >= 75 ? 6.5 :
+                                                    node.priority >= 50 ? 5.5 : 4.5;
 
                             return (
                               <g
@@ -1054,7 +1046,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                                   fill="none"
                                   stroke={colorHex}
                                   strokeWidth="1.5"
-                                  strokeOpacity={isNodeHovered ? "0.6" : "0.2"}
+                                  strokeOpacity={isNodeHovered ? "0.75" : "0.3"}
                                   className="transition-all duration-300"
                                 />
                                 <circle
@@ -1067,15 +1059,15 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                                 <circle
                                   cx={node.cx}
                                   cy={node.cy}
-                                  r="1.5"
+                                  r="2"
                                   fill="#ffffff"
                                 />
                                 <text
                                   x={node.cx}
-                                  y={node.cy + sizeMultiplier + 9}
+                                  y={node.cy + sizeMultiplier + 10}
                                   textAnchor="middle"
                                   fill={isNodeHovered ? "#38bdf8" : "#94a3b8"}
-                                  className="text-[9px] font-mono pointer-events-none select-none transition-colors"
+                                  className="text-[8px] font-mono font-bold pointer-events-none select-none transition-colors"
                                 >
                                   {node.keyword.length > 9 ? `${node.keyword.slice(0, 8)}…` : node.keyword}
                                 </text>
@@ -1085,48 +1077,44 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                         </g>
                       )}
 
-                      {/* Origin Star Beacon Center */}
-                      <circle cx="200" cy="180" r="16" fill={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} fillOpacity="0.04" className="animate-pulse" />
-                      <circle cx="200" cy="180" r="3" fill={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} filter="url(#galaxyGlow)" />
+                      {/* Origin central Beacon */}
+                      <circle cx="200" cy="180" r="18" fill={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} fillOpacity="0.05" className="animate-pulse" />
+                      <circle cx="200" cy="180" r="4" fill={graphViewMode === 'graphrag' ? "#c084fc" : "#38bdf8"} filter="url(#galaxyGlow)" />
                     </svg>
 
-                    {/* Micro tooltip floating info box */}
+                    {/* Tactile detail tooltip over lay */}
                     {hoveredNode ? (
                       graphViewMode === 'graphrag' ? (
-                        <div className="absolute right-3.5 top-3.5 w-[220px] bg-slate-950/95 border border-purple-500/30 p-3 rounded-xl shadow-2xl backdrop-blur-md animate-fadeIn text-left space-y-1.5 pointer-events-none">
-                          <div className="flex justify-between items-center border-b border-purple-950/30 pb-1">
-                            <span className="text-[9px] uppercase font-mono tracking-widest text-purple-400 animate-pulse">
-                              GraphRAG Node
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400">
+                        <div className="absolute right-4 top-4 w-[225px] bg-[#090d18] border border-purple-500/30 p-3.5 rounded-2xl shadow-xl backdrop-blur-md animate-fadeIn text-left space-y-1 z-20 pointer-events-none">
+                          <div className="flex justify-between items-center border-b border-purple-950/40 pb-1.5 text-[8px] font-mono font-black uppercase tracking-wider">
+                            <span className="text-purple-400">RAG THỰC THỂ</span>
+                            <span className="text-slate-400 font-bold">
                               {hoveredNode.label || "Entity"}
                             </span>
                           </div>
                           <h4 className="text-xs font-sans font-black text-slate-100 capitalize">{hoveredNode.name}</h4>
-                          <p className="text-[9px] text-slate-350 leading-normal line-clamp-3">
-                            {hoveredNode.description || "Chưa có khảo tả thực thể."}
+                          <p className="text-[9.5px] text-slate-400 leading-normal line-clamp-3 font-semibold">
+                            {hoveredNode.description || "Chưa dệt dã bối cảnh."}
                           </p>
                         </div>
                       ) : (
-                        <div className="absolute right-3.5 top-3.5 w-[220px] bg-slate-950/95 border border-sky-500/20 p-3 rounded-xl shadow-2xl backdrop-blur-md animate-fadeIn text-left space-y-1.5 pointer-events-none">
-                          <div className="flex justify-between items-center border-b border-sky-950/30 pb-1">
-                            <span className="text-[9px] uppercase font-mono tracking-widest text-sky-400">
-                              {hoveredNode.category}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-400">
+                        <div className="absolute right-4 top-4 w-[225px] bg-[#090d18] border border-sky-500/30 p-3.5 rounded-2xl shadow-xl backdrop-blur-md animate-fadeIn text-left space-y-1 z-20 pointer-events-none">
+                          <div className="flex justify-between items-center border-b border-sky-950/40 pb-1.5 text-[8px] font-mono font-black uppercase tracking-wider">
+                            <span className="text-sky-400">{hoveredNode.category}</span>
+                            <span className="text-slate-400 font-bold">
                               PR: {hoveredNode.priority}
                             </span>
                           </div>
                           <h4 className="text-xs font-sans font-black text-slate-100 capitalize">{hoveredNode.keyword}</h4>
-                          <p className="text-[9px] text-slate-305 leading-normal line-clamp-3">
-                            {hoveredNode.entry?.text ? hoveredNode.entry.text.slice(0, 100).replace(/[#*`~>]/g, '') : "Chưa có dã văn khảo tả."}
+                          <p className="text-[9.5px] text-slate-400 leading-normal line-clamp-3 font-semibold">
+                            {hoveredNode.entry?.text ? hoveredNode.entry.text.slice(0, 110).replace(/[#*`~>]/g, '') : "Chưa có ghi chép dã sử."}
                           </p>
                         </div>
                       )
                     ) : (
-                      <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[9px] text-slate-400 font-mono uppercase tracking-widest">
-                        <span>🛸 {graphViewMode === 'graphrag' ? "Di chuột để quét thực thể GraphRAG" : "Di chuột để quét nhanh tinh cầu cốt truyện"}</span>
-                        <span>Orbit System</span>
+                      <div className="absolute bottom-3.5 left-4 right-4 flex items-center justify-between text-[8px] text-slate-500 font-mono uppercase tracking-widest font-black">
+                        <span>🛸 Orbit Space Core v5</span>
+                        <span>{graphViewMode === 'graphrag' ? "GraphRAG" : "Orbits Spheres"}</span>
                       </div>
                     )}
                   </div>
@@ -1134,77 +1122,266 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
               </div>
             )}
 
-            {/* Spellbook of Starter Templates (5 Cols) */}
-            {showTemplates && (
-              <div className={`${showGraph ? "lg:col-span-12 xl:col-span-5" : "lg:col-span-12"} bg-[#090f23]/70 border border-sky-950/50 rounded-2xl p-5 flex flex-col justify-between shadow-2xl relative backdrop-blur-md animate-fadeIn`}>
-                <div className="space-y-4 h-full flex flex-col">
-                  
-                  <div className="flex items-center justify-between border-b border-sky-950/30 pb-2.5">
-                    <div className="flex items-center gap-2">
-                      <Award size={15} className="text-sky-400" />
-                      <span className="font-sans text-xs font-semibold text-sky-400 tracking-wider uppercase">
-                        Bản Mẫu Thần Thoại (Templates)
+            {/* COLLAPSIBLE INTELLIGENT COGNITIVE DIAGNOSTICS */}
+            {showAIHuyenCo && (
+              <div className="bg-[#0d1220] rounded-[28px] shadow-[8px_8px_16px_#04060c,_-8px_-8px_16px_#161e35] border border-[#1b253b]/20 p-6 space-y-6 animate-fadeIn text-left">
+                {/* Header view */}
+                <div className="flex justify-between items-center border-b border-[#141b2c]/20 pb-3">
+                  <h3 className="font-sans text-xs font-black text-sky-400 uppercase tracking-widest flex items-center gap-2">
+                    <Activity size={14} className="text-purple-400 animate-pulse" />
+                    CHẨN ĐOÁN NÃO BỘ LẬP LUẬN AI
+                  </h3>
+                  <span className="text-[8px] font-mono uppercase bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 text-purple-405 font-black animate-pulse">
+                    COGNITION SYS V5
+                  </span>
+                </div>
+
+                {/* Sub: Active logs inside a sunken black terminal */}
+                <div className="space-y-3">
+                  <span className="text-[9px] font-mono font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                    <Radio size={11} className="text-sky-450" /> Quản TRỊ NHẤT QUÁN TOÀN CỤC
+                  </span>
+                  <div className="bg-[#090d18] rounded-2xl p-4 border border-[#141b2c]/10 max-h-[160px] overflow-y-auto custom-scrollbar space-y-2.5 text-[9.5px] font-mono shadow-inner">
+                    {healthChecks.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-5 text-center text-emerald-400 font-bold gap-1.5">
+                        <CheckCircle size={16} />
+                        <span>Hệ thống nhất quán, không phát hiện rạn nứt tư duy!</span>
+                      </div>
+                    ) : (
+                      healthChecks.map((issue) => (
+                        <div key={issue.id} className="flex items-start gap-2 border-b border-[#141b2c]/5 pb-2.5 last:border-0 last:pb-0">
+                          {issue.type === "error" ? (
+                            <span className="text-red-500 shrink-0 mt-0.5">⬤</span>
+                          ) : issue.type === "warning" ? (
+                            <span className="text-amber-500 shrink-0 mt-0.5">▲</span>
+                          ) : (
+                            <span className="text-sky-400 shrink-0 mt-0.5">◆</span>
+                          )}
+                          <div className="text-slate-300 leading-normal">
+                            <span className="text-sky-400 font-black block">[{issue.target}]</span>
+                            <span>{issue.msg}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Cognitive switches: Neumorphic toggle buttons */}
+                <div className="space-y-4 border-t border-[#141b2c]/15 pt-4">
+                  <div className="flex justify-between items-center text-[9px] font-mono font-black uppercase text-slate-400 tracking-wider">
+                    <span className="flex items-center gap-1.5">
+                      <Cpu size={12} className="text-purple-400" /> Bản đồ kiểm soát lý tính
+                    </span>
+                    <span className="text-[8px] text-purple-400 font-black uppercase">REINFORCEMENT ACTIVE</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Solution 1 */}
+                    <div className="bg-[#0d1220] border border-[#1b253b]/20 shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] rounded-2xl p-3.5 flex items-start gap-3 justify-between transition-all hover:shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#18233e]">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle size={13} className={complianceScan ? "text-emerald-400" : "text-slate-500"} />
+                          <span className="text-[10px] font-sans font-extrabold text-[#e2e8f0]">Ép Thực Tuân Thủ (Self-Compliance Scan)</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                          Ép buộc AI quét các giới hạn & sự sụp đổ bối cảnh trước khi ghi truyện, ngăn chặn ảo giác lập luận.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setComplianceScan(!complianceScan)}
+                        className="text-slate-400 transition-colors shrink-0 mt-0.5 cursor-pointer"
+                      >
+                        {complianceScan ? (
+                          <ToggleRight className="text-emerald-500" size={22} />
+                        ) : (
+                          <ToggleLeft size={22} className="opacity-45" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Solution 2 */}
+                    <div className="bg-[#0d1220] border border-[#1b253b]/20 shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] rounded-2xl p-3.5 flex items-start gap-3 justify-between transition-all hover:shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#18233e]">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <Radio size={13} className={multiTrigger ? "text-sky-400 animate-pulse" : "text-slate-500"} />
+                          <span className="text-[10px] font-sans font-extrabold text-[#e2e8f0]">Kích Hoạt Liên Kết Phụ Thuộc</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                          Khi nạp NPC đặc biệt, tự động đồng bộ hóa vùng trú ẩn và bảo tàng rèn phục vụ mốc hội thoại.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setMultiTrigger(!multiTrigger)}
+                        className="text-slate-400 transition-colors shrink-0 mt-0.5 cursor-pointer"
+                      >
+                        {multiTrigger ? (
+                          <ToggleRight className="text-emerald-500" size={22} />
+                        ) : (
+                          <ToggleLeft size={22} className="opacity-45" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Solution 3 */}
+                    <div className="bg-[#0d1220] border border-[#1b253b]/20 shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] rounded-2xl p-3.5 flex items-start gap-3 justify-between transition-all hover:shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#18233e]">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <Sparkles size={13} className={antiDrift ? "text-[#a78bfa]" : "text-slate-500"} />
+                          <span className="text-[10px] font-sans font-extrabold text-[#e2e8f0]">Khử Trôi Dã Bản Kỷ (Anti-Drift Guard)</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                          Tích tụ nén đệ quy tóm lược dã bối cảnh vạn năm định kỳ sau mỗi 20 lượt truyện, khóa dính dòng thời gian gốc.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setAntiDrift(!antiDrift)}
+                        className="text-slate-400 transition-colors shrink-0 mt-0.5 cursor-pointer"
+                      >
+                        {antiDrift ? (
+                          <ToggleRight className="text-emerald-500" size={22} />
+                        ) : (
+                          <ToggleLeft size={22} className="opacity-45" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Solution 4 */}
+                    <div className="bg-[#0d1220] border border-[#1b253b]/20 shadow-[4px_4px_8px_#04060c,_-4px_-4px_8px_#161e35] rounded-2xl p-3.5 flex items-start gap-3 justify-between transition-all hover:shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#18233e]">
+                      <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <Flame size={13} className={deepReasoning ? "text-amber-400 animate-bounce" : "text-slate-500"} />
+                          <span className="text-[10px] font-sans font-extrabold text-[#e2e8f0]">Quỹ Thinking Phân Nhánh (Deep CoT Mode)</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 font-medium leading-relaxed">
+                          Yêu cầu khóa tối thiểu 1024 tokens phân rã kế hoặc phân tích tâm can NPC trước khi thoại.
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setDeepReasoning(!deepReasoning)}
+                        className="text-slate-400 transition-colors shrink-0 mt-0.5 cursor-pointer"
+                      >
+                        {deepReasoning ? (
+                          <ToggleRight className="text-emerald-500" size={22} />
+                        ) : (
+                          <ToggleLeft size={22} className="opacity-45" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cognitive run optimizing button */}
+                <div className="border-t border-[#141b2c]/20 pt-4">
+                  {optimizingState === 'idle' && (
+                    <button
+                      onClick={handleOptimizeLogic}
+                      className="w-full bg-[#0d1220] text-sky-400 hover:text-sky-305 font-mono text-[9.5px] font-black uppercase py-3.5 rounded-2xl border border-sky-500/25 shadow-[4px_4px_10px_#03050a,_-4px_-4px_10px_#16233f] hover:shadow-[6px_6px_14px_#03050a,_-6px_-6px_14px_#1b2d51] active:shadow-[inset_2px_2px_5px_#03050a,_inset_-2px_-2px_5px_#16233f] transition-all duration-300 text-center flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <RefreshCw size={13} />
+                      ĐỒNG BỘ TỐI ƯU HỆ THỐNG NHẬN THỨC NGAY
+                    </button>
+                  )}
+
+                  {optimizingState === 'running' && (
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center text-[8.5px] font-mono text-purple-405 font-black uppercase animate-pulse">
+                        <span>Đang cân đối tham số dã bối cảnh...</span>
+                        <span>{optimizationProgress}%</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-[#090d18] rounded-full p-[2px] border border-[#141b2c]/10 shadow-inner">
+                        <div 
+                          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 shadow-[0_0_8px_rgba(168,85,247,0.5)] transition-all duration-155"
+                          style={{ width: `${optimizationProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {optimizingState === 'success' && (
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center text-emerald-400 font-mono text-[9.5px] font-black space-y-1.5 animate-bounce">
+                      <CheckCircle size={16} className="text-emerald-400 animate-[spin_1s_ease-out_1]" />
+                      <span>ĐÃ HOÀN THÀNH TỐI ƯU HÓA HỆ THỐNG!</span>
+                      <span className="text-slate-450 font-medium text-[8px] uppercase tracking-wider block">
+                        4/4 cấu phần nhận thức đã áp chế tư duy mạch lạc thành công.
                       </span>
                     </div>
-                    <span className="text-[8px] font-mono py-0.5 px-2 bg-slate-950 text-sky-400 border border-sky-500/25 rounded uppercase">
-                      Quản tạo nhanh
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* PRESETS CHEST (SÁCH MẪU THẦN THOẠI) */}
+            {showTemplates && (
+              <div className="bg-[#0d1220] border border-[#1b253b]/20 rounded-[28px] shadow-[8px_8px_16px_#04060c,_-8px_-8px_16px_#161e35] p-6 flex flex-col justify-between relative animate-fadeIn text-left space-y-5">
+                <div className="space-y-4">
+                  
+                  <div className="flex items-center justify-between border-b border-[#141b2c]/20 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Award size={15} className="text-indigo-400" />
+                      <span className="font-sans text-xs font-black text-slate-300 tracking-wider uppercase">
+                        SÁCH MẪU THẦN THOẠI CỔ ĐẠI
+                      </span>
+                    </div>
+                    <span className="text-[8px] font-mono py-0.5 px-2 bg-[#090d18] text-indigo-400 border border-indigo-500/20 rounded uppercase font-black shadow-inner">
+                      PRESETS
                     </span>
                   </div>
 
-                  {/* Shelf Tab selection */}
-                  <div className="flex bg-slate-950 p-1 rounded-xl gap-1 border border-slate-800/60 shrink-0">
+                  {/* Neumorphic Preset tabs */}
+                  <div className="flex bg-[#090d18] border border-[#141b2c]/10 p-1 rounded-xl shadow-inner gap-1 shrink-0 select-none">
                     {["character", "location", "item", "faction"].map((cat) => (
                       <button
                         key={cat}
                         onClick={() => setActiveTemplateTab(cat)}
-                        className={`flex-1 text-[9px] py-1 text-center font-mono font-bold uppercase rounded-lg transition-all ${
+                        className={`flex-1 text-[8.5px] py-1.8 text-center font-mono font-black uppercase rounded-lg transition-all cursor-pointer ${
                           activeTemplateTab === cat 
-                            ? "bg-sky-500/10 text-sky-400 border border-sky-500/30 shadow-sm" 
-                            : "text-slate-400 hover:text-slate-200"
+                            ? "bg-[#0d1220] text-sky-400 shadow-[1px_1px_3px_rgba(0,0,0,0.65)]" 
+                            : "text-slate-450 hover:text-slate-200"
                         }`}
                       >
-                        {cat === 'character' ? 'Nhân vật' : cat === 'location' ? 'Địa danh' : cat === 'item' ? 'Cổ vật' : 'Mật nghi'}
+                        {cat === 'character' ? 'NPC' : cat === 'location' ? 'VÙNG ĐẤT' : cat === 'item' ? 'BẢO KHÍ' : 'THẾ LỰC'}
                       </button>
                     ))}
                   </div>
 
-                  {/* Dossier Card display */}
-                  <div className="flex-1 bg-slate-950/95 p-4 border border-sky-950/80 rounded-xl flex flex-col justify-between relative overflow-hidden text-left space-y-3.5">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex justify-between items-center text-[9px] font-mono text-slate-400">
-                        <span>Cổ thư khố / Tài liệu dã sử</span>
-                        <span className="font-extrabold text-sky-400">
-                          PREGRADE #0{STARTER_TEMPLATES.findIndex((t) => t.category === activeTemplateTab) + 1}
+                  {/* Template description inside standard sunken panel */}
+                  <div className="bg-[#090d18] p-4.5 border border-[#141b2c]/10 shadow-inner rounded-2xl flex flex-col justify-between relative text-left space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center text-[8px] font-mono font-black text-slate-500">
+                        <span>LORE ATTRIBUTED DESIGN TEMPLATE</span>
+                        <span className="font-black text-indigo-405">
+                          GRADE_0{STARTER_TEMPLATES.findIndex((t) => t.category === activeTemplateTab) + 1}
                         </span>
                       </div>
 
                       <div className="space-y-1">
-                        <h4 className="text-sm font-sans font-black text-sky-400 uppercase tracking-wide flex items-center gap-1.5">
-                          <ChevronRight size={13} className="text-sky-400" />
+                        <h4 className="text-xs sm:text-sm font-sans font-black text-indigo-400 hover:text-indigo-305 uppercase tracking-wide flex items-center gap-1.5 select-none">
+                          <ChevronRight size={13} className="text-indigo-400 animate-pulse" />
                           {selectedTemplate.title}
                         </h4>
-                        <p className="text-[11px] text-slate-300 leading-relaxed font-sans line-clamp-3">
+                        <p className="text-[10px] text-slate-400 leading-relaxed font-sans line-clamp-3">
                           {selectedTemplate.description}
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-[10px] pt-1.5 border-t border-slate-900/50 font-sans text-slate-300">
+                      <div className="grid grid-cols-2 gap-2 text-[9px] pt-2 border-t border-[#141b2c]/15 font-sans text-slate-400">
                         {selectedTemplate.rpg_attrs && Object.entries(selectedTemplate.rpg_attrs).map(([key, value]: any) => {
-                          const label = key === "alignment" ? "Khuynh hướng" :
-                                        key === "role" ? "Nhân cấu định lý" :
-                                        key === "danger_level" ? "Mức đe dọa" :
+                          const label = key === "alignment" ? "Chuẩn đức" :
+                                        key === "role" ? "Vai diễn AI" :
+                                        key === "danger_level" ? "Độ hiểm" :
                                         key === "climate" ? "Khí hậu" :
-                                        key === "ruler" ? "Tổ lĩnh cai quản" :
-                                        key === "population" ? "Cư tộc định cư" :
-                                        key === "rarity" ? "Phẩm cấp" :
-                                        key === "abilities" ? "Kỹ nghệ linh thức" :
-                                        key === "influence" ? "Ảnh hưởng" : key;
+                                        key === "ruler" ? "Lãnh chúa" :
+                                        key === "population" ? "Dị tộc" :
+                                        key === "rarity" ? "Phẩm thế" :
+                                        key === "abilities" ? "Thần thông" :
+                                        key === "influence" ? "Phóng tát" : key;
                           return (
-                            <div key={key} className="space-y-0.5 truncate">
-                              <span className="text-slate-500 block uppercase tracking-wider text-[8px] font-mono">
+                            <div key={key} className="space-y-0.5 truncate bg-[#0d1220]/45 p-1.5 rounded-lg border border-[#141b2c]/10">
+                              <span className="text-slate-550 block uppercase tracking-wider text-[7px] font-mono font-extrabold">
                                 {label}
                               </span>
-                              <span className="font-bold block truncate text-sky-305">
+                              <span className="font-black block truncate text-slate-350">
                                 {value}
                               </span>
                             </div>
@@ -1213,7 +1390,7 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="pt-2.5 border-t border-sky-950/40">
+                    <div className="pt-2 border-t border-[#141b2c]/10">
                       <button
                         onClick={() => {
                           const modelData: Partial<VectorData> = {
@@ -1234,10 +1411,10 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
                           }
                           onAddManualWithTemplate(modelData);
                         }}
-                        className="w-full py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:opacity-90 hover:from-sky-550 text-slate-100 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all transform hover:translate-y-[-1px]"
+                        className="w-full py-2.5 bg-[#0d1220] hover:bg-[#11172a] text-indigo-400 font-bold text-[9.5px] rounded-xl shadow-[3px_3px_6px_#04060c,_-3px_-3px_5px_#161e35] hover:text-indigo-305 border border-[#1b253b]/20 hover:scale-[1.01] active:shadow-inner cursor-pointer transition-all flex items-center justify-center gap-1.5 uppercase tracking-wider font-mono"
                       >
-                        <Sparkles size={11} />
-                        Tiếp tụ bối cảnh này!
+                        <Sparkles size={11} className="text-indigo-400 animate-pulse" />
+                        Trích dệt cổ bản bối cảnh mẫu
                         <ArrowRight size={11} className="ml-1" />
                       </button>
                     </div>
@@ -1247,323 +1424,257 @@ export const EncyclopediaDashboard: React.FC<EncyclopediaDashboardProps> = ({
             )}
 
           </div>
-        )}
 
-        {/* 8 Categories Filter Pills */}
-        <div className="space-y-2 text-left">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-1.5">
-              <Bookmark size={14} className="text-sky-400" />
-              <h3 className="font-sans text-xs font-bold text-sky-455 uppercase tracking-widest">
-                Lớp Tri Thức Bản Đồ ({Object.keys(CATEGORY_MAP).length} Nhãn mục)
-              </h3>
-            </div>
-            {activeFilterIndicator && (
-              <button 
-                onClick={() => {
-                  onCategoryFilterChange(null);
-                  setActiveFilterIndicator(null);
-                }}
-                className="text-xs font-mono text-sky-455 hover:underline flex items-center gap-1 uppercase font-bold"
-              >
-                ✕ Hủy lọc nhãn
-              </button>
-            )}
-          </div>
+          {/* RIGHT CONTENT COLUMN: Categories Grid & Dossier Cards */}
+          <div className="xl:col-span-7 space-y-6">
+            
+            {/* Core Main Stage Bento Grid of Lore Dossier Cards */}
+            <div className="space-y-4 text-left">
+              <div className="flex items-center justify-between border-b border-[#141b2c]/30 pb-3">
+                <h3 className="font-sans text-xs sm:text-sm font-black text-sky-400 uppercase tracking-widest flex items-center gap-2 select-none">
+                  <Database size={15} />
+                  DANH MỤC THỬ KIẾM CỔ DIỄN ({filteredEntries.length} Hồ Sơ)
+                </h3>
+                <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest font-black">LORE RECORD TILES</span>
+              </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {Object.entries(CATEGORY_MAP).map(([catKey, catInfo]) => {
-              const count = entries.filter(e => e.category === catKey).length;
-              const isSelected = activeFilterIndicator === catKey;
+              {filteredEntries.length === 0 ? (
+                /* Sunken empty state card */
+                <div className="text-center bg-[#090d18] border border-[#141b2c]/15 rounded-[32px] py-20 flex flex-col items-center justify-center gap-4 shadow-inner">
+                  <Search size={36} className="text-sky-400/35 animate-pulse" />
+                  <h4 className="font-sans text-sm text-sky-400 uppercase tracking-wider font-extrabold">Cổ bối cảnh không có tàng thư tương hợp</h4>
+                  <p className="text-slate-450 text-[10.5px] max-w-sm leading-relaxed px-5 font-bold text-center">
+                    Hãy dệt một bách khoa bối cảnh hoàn toàn mới hoặc trích dữ bối cảnh mẫu từ bên trái để tháp kích tư duy AI!
+                  </p>
+                  <button
+                    onClick={() => onAddManualWithTemplate({
+                      category: "world",
+                      keyword: "",
+                      keywords: [],
+                      text: ""
+                    })}
+                    className="mt-2 px-5 py-2.5 bg-[#0d1220] text-sky-450 hover:text-sky-350 text-xs font-mono uppercase font-black rounded-xl border border-sky-400/20 shadow-[2px_2px_5px_rgba(0,0,0,0.6)] cursor-pointer hover:scale-102 transition-all"
+                  >
+                    + Tạo lập Thư Mới Ngay
+                  </button>
+                </div>
+              ) : (
+                /* Grid of Tiles and Cards (Gạch và Thẻ) */
+                <div className={layoutStyle === "dense" ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"}>
+                  {filteredEntries.map((e) => {
+                    const isEnabled = e.isEnabled !== false;
+                    const catInfo = CATEGORY_MAP[e.category || 'world'];
+                    const { label: tierLabel, color: tierColor } = getPriorityTier(e.priority);
+                    const IconComponent = catInfo ? catInfo.icon : Database;
 
-              return (
-                <button
-                  key={catKey}
-                  onClick={() => handleCategoryFilterClick(catKey)}
-                  className={`group p-3 rounded-xl text-left transition-all hover:translate-y-[-1px] shadow-sm flex flex-col justify-between min-h-[90px] relative overflow-hidden border ${
-                    isSelected
-                      ? "bg-sky-500/10 border-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.15)] bg-gradient-to-tr from-sky-950/20 to-slate-900"
-                      : "bg-[#0d1527]/45 border-slate-800/80 hover:border-sky-500/40 hover:bg-slate-900/80"
-                  }`}
-                >
-                  <div className={`p-1 w-8 h-8 rounded border flex items-center justify-center ${
-                    isSelected ? "text-sky-400 border-sky-500/40 bg-slate-900" : "text-slate-400 border-slate-800/60 bg-slate-950/60"
-                  }`}>
-                    {React.createElement(catInfo.icon, { size: 16 })}
-                  </div>
-                  <div className="mt-2 text-ellipsis overflow-hidden z-10 w-full">
-                    <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider block truncate">
-                      {catInfo.label}
-                    </span>
-                    <div className="flex justify-between items-baseline mt-0.5">
-                      <span className="text-base font-sans font-black text-slate-100">
-                        {count}
-                      </span>
-                      {isSelected && (
-                        <span className="text-[10px] font-mono text-sky-400 font-bold">
-                          Lọc ⬤
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                    if (layoutStyle === "dense") {
+                      return (
+                        <div
+                          key={e.id}
+                          onClick={() => onSelect(e.id)}
+                          className={`group rounded-2xl text-left transition-all px-4 py-3.5 cursor-pointer flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 select-none border border-[#1b253b]/20 ${
+                            !isEnabled 
+                              ? 'bg-[#090d18]/50 opacity-40 grayscale hover:opacity-75 hover:grayscale-0 shadow-inner' 
+                              : 'bg-[#0d1220] shadow-[5px_5px_10px_#04060c,_-5px_-5px_10px_#161e35] hover:shadow-[7px_7px_14px_#04060c,_-7px_-7px_14px_#1a243d] hover:scale-[1.006]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                            <div className={`p-1.8 w-8 h-8 rounded-lg border shrink-0 flex items-center justify-center ${
+                              isEnabled ? "text-sky-400 border-sky-500/20 bg-[#090d18] shadow-inner" : "text-slate-500 border-slate-900 bg-[#090d18]"
+                            }`}>
+                              <IconComponent size={14} />
+                            </div>
+                            <div className="min-w-0 flex-1 font-sans">
+                              <div className="flex items-center gap-2">
+                                <h4 className={`text-xs sm:text-sm font-sans font-black tracking-wide text-sky-400 group-hover:text-sky-300 capitalize truncate ${!isEnabled ? 'line-through opacity-50' : ''}`}>
+                                  {e.keyword || e.title || "Vô danh thư"}
+                                </h4>
+                                {e.triggerMode === 'always' && <Pin size={10} className="text-sky-400 animate-pulse shrink-0" />}
+                              </div>
+                              <span className="text-[10px] text-slate-400 font-semibold truncate block mt-0.5 leading-normal">
+                                {e.category === 'character' ? (() => {
+                                  try {
+                                    const cData = JSON.parse(e.text || "{}");
+                                    return [cData.narrativeRole, cData.personality].filter(Boolean).join(" • ");
+                                  } catch {
+                                    return (e.text || '').replace(/[#*`~>]/g, '');
+                                  }
+                                })() : (e.text || '').replace(/[#*`~>]/g, '')}
+                              </span>
+                            </div>
+                          </div>
 
-        {/* Core Main Stage Bento Grid of Lore Dossier Cards (Focus mode center) */}
-        <div className="space-y-4 text-left pt-3">
-          <div className="flex items-center justify-between border-b border-sky-950/40 pb-2">
-            <h3 className="font-sans text-lg font-extrabold text-sky-400 uppercase tracking-widest flex items-center gap-2 select-none">
-              <Database size={18} className="text-sky-400" />
-              Danh Mục Toàn Hư (Dossier Record)
-            </h3>
-            <span className="text-xs font-mono text-indigo-400">Khai quật được {filteredEntries.length} mốc tri thức</span>
-          </div>
+                          <div className="flex items-center gap-3.5 shrink-0 ml-auto sm:ml-0 font-bold font-mono text-[9px]">
+                            {e.keywords && e.keywords.length > 0 && (
+                              <div className="hidden sm:flex gap-1 overflow-hidden max-w-[140px] select-none">
+                                {e.keywords.slice(0, 2).map((w, idx) => (
+                                  <span key={idx} className="text-[8px] text-slate-400 bg-[#090d18] px-1.5 py-0.5 rounded border border-[#141b2c]/20">
+                                    #{w}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
 
-          {filteredEntries.length === 0 ? (
-            <div className="text-center bg-[#0d1527]/35 border border-dashed border-slate-800/80 py-16 rounded-2xl flex flex-col items-center justify-center gap-3">
-              <Search size={36} className="text-slate-700 animate-pulse" />
-              <h4 className="font-sans text-sm text-sky-455 uppercase tracking-wider font-extrabold">Cổ thư chưa có dữ liệu tương đồng</h4>
-              <p className="text-slate-400 text-xs max-w-sm leading-relaxed">Vui lòng điều chỉnh điều kiện tìm kiếm hoặc bấm nút nạp nhanh bối cảnh mẫu phía bên trên.</p>
-            </div>
-          ) : (
-            <div className={layoutStyle === "dense" ? "space-y-2 lg:space-y-3" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"}>
-              {filteredEntries.map((e) => {
-                const isEnabled = e.isEnabled !== false;
-                const catInfo = CATEGORY_MAP[e.category || 'world'];
-                const { label: tierLabel, color: tierColor } = getPriorityTier(e.priority);
+                            <span className={`px-1.5 py-0.5 rounded text-[8px] border shrink-0 uppercase font-bold ${tierColor}`}>
+                              {tierLabel}
+                            </span>
 
-                if (layoutStyle === "dense") {
-                  return (
-                    <div
-                      key={e.id}
-                      onClick={() => onSelect(e.id)}
-                      className={`group rounded-xl border text-left transition-all px-4 py-3.5 shadow-md relative cursor-pointer flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 select-none hover:translate-x-1 ${
-                        !isEnabled 
-                          ? 'bg-slate-950/45 border-slate-900 opacity-45 grayscale hover:opacity-75 hover:grayscale-0' 
-                          : 'bg-[#090f23]/90 border-slate-800/85 hover:border-sky-505/40 hover:bg-slate-900/95 shadow-[0_4px_16px_rgba(0,0,0,0.4)]'
-                      }`}
-                    >
-                      {/* Left Block: Icon & Keyword & text brief */}
-                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                        <div className={`p-2 rounded-lg border shrink-0 ${
-                          isEnabled ? "text-sky-400 border-sky-500/20 bg-slate-950" : "text-slate-400 border-slate-850 bg-slate-900"
-                        }`}>
-                          {catInfo && React.createElement(catInfo.icon, { size: 16 })}
+                            <div className="flex items-center gap-2 border-l border-[#141b2c]/30 pl-2.5">
+                              {onToggleStatus && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onToggleStatus(e.id, !isEnabled);
+                                  }}
+                                  className="text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
+                                  title="Bật/Tắt định tuyến"
+                                >
+                                  {isEnabled ? (
+                                    <ToggleRight className="text-emerald-500 hover:text-emerald-400" size={19} />
+                                  ) : (
+                                    <ToggleLeft size={19} className="opacity-40" />
+                                  )}
+                                </button>
+                              )}
+                              
+                              {onDelete && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (confirm("Bạn có chắc chắn muốn xóa thư tịch tri thức này?")) {
+                                      onDelete(e.id);
+                                    }
+                                  }}
+                                  className="text-slate-500 hover:text-red-400 transition-colors ml-0.5 shrink-0 cursor-pointer p-1"
+                                  title="Xóa cổ bản"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2.5">
-                            <h4 className={`text-sm font-sans font-extrabold tracking-wide text-sky-400 group-hover:text-sky-350 capitalize truncate ${!isEnabled ? 'line-through opacity-50' : ''}`}>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={e.id}
+                        onClick={() => onSelect(e.id)}
+                        className={`group rounded-[28px] text-left transition-all duration-300 p-5.5 shadow-lg relative overflow-hidden cursor-pointer flex flex-col justify-between h-[235px] select-none border border-[#1b253b]/20 ${
+                          !isEnabled 
+                            ? 'bg-[#090d18]/50 opacity-40 grayscale hover:opacity-75 hover:grayscale-0 shadow-inner' 
+                            : 'bg-[#0d1220] shadow-[6px_6px_12px_#04060c,_-6px_-6px_12px_#161e35] hover:shadow-[10px_10px_20px_#04060c,_-10px_-10px_20px_#1a243d] hover:scale-[1.012]'
+                        }`}
+                      >
+                        <div className="space-y-2.5 flex-1 flex flex-col">
+                          <div className="flex justify-between items-center text-[9px] font-mono font-black select-none mb-1">
+                            <span className="flex items-center gap-1.5 text-sky-400">
+                              <IconComponent size={11} className="shrink-0" />
+                              {catInfo ? catInfo.label : 'Cổ Bản'}
+                            </span>
+                            
+                            <div className="flex gap-1.5 items-center">
+                              {e.triggerMode && (
+                                <span className="bg-[#090d18] px-1.5 py-0.5 rounded text-[7.5px] text-sky-400 font-bold border border-[#141b2c]/10 shadow-inner">
+                                  {e.triggerMode === 'always' ? 'Thường trực' : e.triggerMode}
+                                </span>
+                              )}
+                              <span className={`px-1.5 rounded text-[7.5px] border font-bold uppercase ${tierColor}`}>
+                                {tierLabel.replace(" Class", "")}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-1 flex-1">
+                            <h4 className={`text-sm sm:text-xs md:text-sm font-sans font-black tracking-wide text-sky-400 group-hover:text-sky-305 capitalize truncate ${!isEnabled ? 'line-through opacity-50' : ''}`}>
                               {e.keyword || e.title || "Vô danh thư"}
                             </h4>
-                            {e.triggerMode === 'always' && <Pin size={11} className="text-sky-400 animate-pulse shrink-0" />}
-                            <span className="text-xs font-mono text-slate-400 hidden md:inline shrink-0">
-                              ~{Math.round((e.text?.length || 0)/3.8)} TK
-                            </span>
-                          </div>
-                          <span className="text-xs text-slate-300 font-sans truncate block line-clamp-1 mt-0.5">
-                            {e.category === 'character' ? (() => {
-                              try {
-                                const cData = JSON.parse(e.text || "{}");
-                                return [cData.narrativeRole, cData.personality].filter(Boolean).join(" • ");
-                              } catch {
-                                return (e.text || '').replace(/[#*`~>]/g, '');
-                              }
-                            })() : (e.text || '').replace(/[#*`~>]/g, '')}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Right Block: Tags list, Tier Badge, Status toggles, Delete button */}
-                      <div className="flex items-center gap-3.5 shrink-0 ml-auto sm:ml-0">
-                        {e.keywords && e.keywords.length > 0 && (
-                          <div className="hidden sm:flex gap-1 overflow-hidden max-w-[140px]">
-                            {e.keywords.slice(0, 2).map((w, idx) => (
-                              <span key={idx} className="text-xs font-mono text-slate-405 bg-slate-950 px-1.5 py-0.5 rounded truncate max-w-[70px] border border-slate-900/60 font-medium font-bold">
-                                #{w}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {(e.relatedEntries || []).length > 0 && (
-                          <span className="text-xs font-mono text-sky-455 font-bold hidden sm:inline shrink-0">
-                            🔗{(e.relatedEntries || []).length}
-                          </span>
-                        )}
-
-                        <span className={`px-2 py-0.5 rounded text-xs border font-bold uppercase shrink-0 ${tierColor}`}>
-                          {tierLabel}
-                        </span>
-
-                        <div className="flex items-center gap-2 border-l border-slate-800/80 pl-2.5">
-                          {/* Enable/Disable switch button */}
-                          {onToggleStatus && (
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onToggleStatus(e.id, !isEnabled);
-                              }}
-                              className="text-slate-400 hover:text-sky-450 transition-colors focus:outline-none shrink-0"
-                              title={isEnabled ? "Tạm ngắt tri thức" : "Bật kích hoạt"}
-                            >
-                              {isEnabled ? (
-                                <ToggleRight className="text-emerald-500 hover:text-emerald-400" size={18} />
-                              ) : (
-                                <ToggleLeft size={18} className="opacity-40" />
-                              )}
-                            </button>
-                          )}
-                          
-                          {/* Quick delete button */}
-                          {onDelete && (
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                if (confirm("Bạn có chắc chắn muốn xóa thư tịch tri thức này?")) {
-                                  onDelete(e.id);
+                            
+                            <p className="text-[10px] text-slate-300 leading-relaxed font-sans line-clamp-4 font-semibold">
+                              {e.category === 'character' ? (() => {
+                                try {
+                                  const cData = JSON.parse(e.text || "{}");
+                                  return [cData.narrativeRole, cData.personality, cData.appearance].filter(Boolean).join(" • ");
+                                } catch {
+                                  return (e.text || '').replace(/[#*`~>]/g, '');
                                 }
-                              }}
-                              className="text-stone-500 hover:text-red-500 transition-colors focus:outline-none ml-0.5 shrink-0"
-                              title="Xóa vĩnh viễn"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          )}
+                              })() : (e.text || '').replace(/[#*`~>]/g, '')}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                }
 
-                return (
-                  <div
-                    key={e.id}
-                    onClick={() => onSelect(e.id)}
-                    className={`group rounded-2xl border text-left transition-all p-5 shadow-lg relative overflow-hidden cursor-pointer flex flex-col justify-between h-[210px] select-none hover:scale-[1.015] duration-300 font-sans hover:shadow-sky-500/5 ${
-                      !isEnabled 
-                        ? 'bg-slate-950/45 border-slate-900 opacity-44 grayscale hover:opacity-75 hover:grayscale-0' 
-                        : 'bg-[#090f23]/90 border-slate-800/85 hover:border-sky-500/40 shadow-[0_4px_24px_rgba(0,0,0,0.45)]'
-                    }`}
-                  >
-                    {/* Modern geometric cyber accents on corners */}
-                    <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-sky-500/20 group-hover:border-sky-400 group-hover:w-3.5 group-hover:h-3.5 transition-all duration-300 pointer-events-none" />
-                    <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-sky-500/20 group-hover:border-sky-400 group-hover:w-3.5 group-hover:h-3.5 transition-all duration-300 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-sky-500/20 group-hover:border-sky-400 group-hover:w-3.5 group-hover:h-3.5 transition-all duration-300 pointer-events-none" />
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-sky-500/20 group-hover:border-sky-400 group-hover:w-3.5 group-hover:h-3.5 transition-all duration-300 pointer-events-none" />
-
-                    {/* Card Header Strip */}
-                    <div className="space-y-2 flex-1 flex flex-col">
-                      <div className="flex justify-between items-center text-[9px] font-mono text-slate-400">
-                        <span className="flex items-center gap-1 font-bold text-sky-455">
-                          {catInfo && React.createElement(catInfo.icon, { size: 11, className: "text-sky-400" })}
-                          {catInfo ? catInfo.label : 'Cổ Thư'}
-                        </span>
-                        
-                        <div className="flex gap-1.5 items-center">
-                          {e.triggerMode && (
-                            <span className="bg-slate-950 px-1.5 py-0.5 rounded text-[8px] font-bold text-sky-450/80 uppercase border border-slate-900/60">
-                              {e.triggerMode === 'always' ? 'Always-ON' : e.triggerMode}
-                            </span>
-                          )}
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] border font-bold uppercase ${tierColor}`}>
-                            {tierLabel}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Main Book Title */}
-                      <div className="space-y-1">
-                        <h4 className={`text-base font-sans font-extrabold tracking-wide text-sky-400 group-hover:text-sky-305 capitalize truncate ${!isEnabled ? 'line-through opacity-50' : ''}`}>
-                          {e.keyword || e.title || "Vô danh thư"}
-                        </h4>
-                        
-                        {/* Summary / Description */}
-                        <p className="text-[10.5px] text-slate-350 leading-relaxed font-sans line-clamp-3">
-                          {e.category === 'character' ? (() => {
-                            try {
-                              const cData = JSON.parse(e.text || "{}");
-                              return [cData.narrativeRole, cData.personality, cData.appearance].filter(Boolean).join(" • ");
-                            } catch {
-                              return (e.text || '').replace(/[#*`~>]/g, '');
-                            }
-                          })() : (e.text || '').replace(/[#*`~>]/g, '')}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Bottom strip representing properties */}
-                    <div className="pt-2.5 mt-2 border-t border-slate-800/85 flex flex-col gap-1.5">
-                      {/* Keyword triggers chips lists */}
-                      {e.keywords && e.keywords.length > 0 && (
-                        <div className="flex gap-1 overflow-hidden h-4 select-none">
-                          {e.keywords.slice(0, 3).map((w, idx) => (
-                            <span key={idx} className="text-[9px] font-mono text-slate-405 truncate bg-slate-950 px-1 py-0.5 rounded border border-slate-900/60">
-                              #{w}
-                            </span>
-                          ))}
-                          {e.keywords.length > 3 && (
-                            <span className="text-[8px] font-mono text-slate-500">+{e.keywords.length - 3}</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center text-[9px] font-mono text-slate-400 pt-0.5">
-                        <span className="flex items-center gap-1">
-                          {(e.relatedEntries || []).length > 0 ? (
-                            <span className="text-sky-400 font-bold flex items-center gap-1">🔗 {(e.relatedEntries || []).length} liên đới</span>
-                          ) : (
-                            <span>無 Liên kết</span>
-                          )}
-                          {e.triggerMode === 'always' && <Pin size={8} className="text-sky-400 animate-pulse" />}
-                        </span>
-
-                        <div className="flex items-center gap-3">
-                          <span className="text-[9px] text-slate-500">~{Math.round((e.text?.length || 0)/3.8)} Tokens</span>
-                          
-                          {/* Enable/Disable switch button */}
-                          {onToggleStatus && (
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onToggleStatus(e.id, !isEnabled);
-                              }}
-                              className="text-slate-400 hover:text-sky-400 transition-colors focus:outline-none"
-                              title={isEnabled ? "Tạm ngắt tri thức" : "Bật kích hoạt"}
-                            >
-                              {isEnabled ? (
-                                <ToggleRight className="text-emerald-500 hover:text-emerald-400" size={18} />
-                              ) : (
-                                <ToggleLeft size={18} className="opacity-40" />
+                        {/* Footer card controls with neumorphic slider and stats */}
+                        <div className="pt-2 border-t border-[#141b2c]/25 flex flex-col gap-2">
+                          {e.keywords && e.keywords.length > 0 && (
+                            <div className="flex gap-1 overflow-hidden h-4.5 select-none items-center">
+                              {e.keywords.slice(0, 3).map((w, idx) => (
+                                <span key={idx} className="text-[8px] font-mono text-slate-400 bg-[#090d18] px-1.5 py-0.5 rounded border border-[#141b2c]/20">
+                                  #{w}
+                                </span>
+                              ))}
+                              {e.keywords.length > 3 && (
+                                <span className="text-[8px] font-mono text-slate-500 font-extrabold">+{e.keywords.length - 3}</span>
                               )}
-                            </button>
+                            </div>
                           )}
-                          
-                          {/* Quick delete button */}
-                          {onDelete && (
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                if (confirm("Bạn có chắc chắn muốn xóa thư tịch tri thức này?")) {
-                                  onDelete(e.id);
-                                }
-                              }}
-                              className="text-slate-500 hover:text-red-500 transition-colors focus:outline-none ml-0.5"
-                              title="Xóa vĩnh viễn"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
+
+                          <div className="flex justify-between items-center text-[8.5px] font-mono text-slate-400 font-bold pt-0.5 select-none">
+                            <span className="flex items-center gap-1.5">
+                              {(e.relatedEntries || []).length > 0 ? (
+                                <span className="text-sky-400 flex items-center gap-1 font-black">🔗 {(e.relatedEntries || []).length} kết hợp</span>
+                              ) : (
+                                <span className="text-slate-500">Đối độc lập</span>
+                              )}
+                              {e.triggerMode === 'always' && <Pin size={8} className="text-sky-450 animate-pulse" />}
+                            </span>
+
+                            <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+                              <span className="text-slate-500 text-[8px] font-extrabold mb-0.5">~{Math.round((e.text?.length || 0)/3.8)} Tokens</span>
+                              
+                              {onToggleStatus && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onToggleStatus(e.id, !isEnabled);
+                                  }}
+                                  className="text-slate-400 hover:text-sky-455 transition-colors cursor-pointer"
+                                  title="Chuyển hoạt trạng"
+                                >
+                                  {isEnabled ? (
+                                    <ToggleRight className="text-emerald-500 hover:text-emerald-400" size={18} />
+                                  ) : (
+                                    <ToggleLeft size={18} className="opacity-40" />
+                                  )}
+                                </button>
+                              )}
+                              
+                              {onDelete && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (confirm("Bạn có chắc chắn muốn xóa thư tịch tri thức này?")) {
+                                      onDelete(e.id);
+                                    }
+                                  }}
+                                  className="text-slate-500 hover:text-red-450 transition-colors ml-0.5 cursor-pointer p-1"
+                                  title="Hủy diệt dã thư"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+
+          </div>
+
         </div>
 
       </div>

@@ -23,7 +23,7 @@ import { DynamicMemoryService } from "../memory/DynamicMemoryService";
 // Task 3.3 Step 2: History Slicing Constant
 // Default changed from 100 to 40 to optimize token consumption and performance
 const MAX_HISTORY_CONTEXT = 40;
-const EMBEDDING_SCHEDULE_INTERVAL = 50;
+const EMBEDDING_SCHEDULE_INTERVAL = 10;
 
 // Helper to inject in-chat segments at specific depths from end of history
 function injectInChatSegments(
@@ -97,6 +97,48 @@ export const getAiModel = (settings: any): string => {
   const activeProxy = settings?.proxies?.find((p: any) => p.id === settings.activeProxyId);
   return activeProxy && activeProxy.model ? activeProxy.model : (settings?.aiModel || "gemini-2.1-pro-preview");
 };
+
+/**
+ * Generates an incremental bridge summary for sliced-out history segments to prevent memory discontinuity
+ */
+async function generateIncrementalSummaryForSlicedHistory(
+  slicedOutHistory: ChatMessage[],
+  worldSummary: string,
+  settings: AppSettings
+): Promise<string | null> {
+  if (slicedOutHistory.length === 0) return null;
+  console.log(`[IncrementalSummary] Summarizing ${slicedOutHistory.length} sliced-out messages...`);
+  try {
+    const aiClient = getAiClient(settings);
+    const textToSummarize = slicedOutHistory
+      .map(m => `[${m.role === 'user' ? 'Người chơi' : 'Hệ thống'}]: ${m.text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "").trim()}`)
+      .join("\n\n");
+
+    const prompt = `Bạn là một trợ lý thông minh phụ trách nén bộ nhớ cốt truyện.
+Hãy viết một bản tóm tắt tích lũy siêu ngắn gọn, súc tích (dưới 150 chữ) về các sự kiện chính đã diễn ra trong đoạn hội thoại bị lược bỏ sau đây.
+Bản tóm tắt này sẽ đóng vai trò là ký ức bắc cầu (bridge memory) để mô hình chính hiểu chuyện gì đã xảy ra trước đó.
+
+Hội thoại bị lược bỏ:
+${textToSummarize}
+
+Yêu cầu: Chỉ trả về đoạn tóm tắt vắn tắt bằng tiếng Việt, không kèm định dạng hay lời giải thích nào khác.`;
+
+    const response = await aiClient.models.generateContent({
+      model: settings.aiMode === 'hybrid' && settings.backgroundAiModel ? settings.backgroundAiModel : "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: {
+        temperature: 0.2,
+        maxOutputTokens: 300,
+      }
+    });
+
+    const summary = response.text?.trim() || "";
+    return summary.replace(/```(json|txt)?\n?|```/g, "").trim();
+  } catch (err) {
+    console.error("[IncrementalSummary] Summarization failed:", err);
+    return null;
+  }
+}
 
 // Helper to check if a Gemini model has thinking capability natively or via configuration
 export function checkModelThinkingCapability(modelName: string, thinkingBudget: number): boolean {
@@ -322,6 +364,24 @@ export const gameplayAiService = {
           if (history[i].incrementalSummary) {
             contextualSummary = history[i].incrementalSummary;
             break;
+          }
+        }
+        
+        if (!contextualSummary) {
+          try {
+            const slicedOutHistory = history.slice(0, finalHistoryStartIndex);
+            const bridgedSummary = await generateIncrementalSummaryForSlicedHistory(
+              slicedOutHistory,
+              worldData.summary || "",
+              settings
+            );
+            if (bridgedSummary) {
+              contextualSummary = bridgedSummary;
+              history[finalHistoryStartIndex - 1].incrementalSummary = bridgedSummary;
+              console.log("[IncrementalSummary] Bridged memory successfully created:", bridgedSummary);
+            }
+          } catch (briefErr) {
+            console.warn("[IncrementalSummary] Bridged summary extraction failed:", briefErr);
           }
         }
       }
@@ -689,6 +749,9 @@ export const gameplayAiService = {
             }
           }
 
+          // Run failed tasks queue processing to self-heal state consistency
+          await DynamicMemoryService.runFailedTasksQueue(settings, campaignId, worldData);
+
           // Process StoryBible Turn (Extract + Consolidate)
           if (settings.enableVectorMemory) {
             // Get recent history including the current input and AI response
@@ -705,19 +768,20 @@ export const gameplayAiService = {
                 timestamp: Date.now() + 1,
               },
             ];
-            await storyBibleService.processTurn(
+            
+            await DynamicMemoryService.retryTask("storyBibleService.processTurn", () => storyBibleService.processTurn(
               recentForBible,
               campaignId,
               settings,
               currentTurn,
-            );
+            ));
 
             if (currentTurn > 0 && currentTurn % 3 === 0) {
-               await GraphRAGService.extractAndIntegrate(
+               await DynamicMemoryService.retryTask("GraphRAGService.extractAndIntegrate", () => GraphRAGService.extractAndIntegrate(
                  recentForBible,
                  campaignId,
                  settings
-               );
+               ));
             }
 
             // DYNAMIC MEMORY SUMMARIZATION (EVERY 15 TURNS)
@@ -725,12 +789,12 @@ export const gameplayAiService = {
                // Summarize the last 30 messages (approx 15 turns)
                const sliceLength = Math.min(slicedHistory.length, 30);
                const historyToSummarize = slicedHistory.slice(-sliceLength);
-               const newSummary = await DynamicMemoryService.processCoreMemories(
+               const newSummary = await DynamicMemoryService.retryTask("DynamicMemoryService.processCoreMemories", () => DynamicMemoryService.processCoreMemories(
                  historyToSummarize,
                  worldData,
                  settings,
                  campaignId
-               );
+               ));
                if (newSummary && typeof window !== 'undefined') {
                  window.dispatchEvent(new CustomEvent('tavo_summary_update', { detail: newSummary }));
                }
@@ -740,12 +804,12 @@ export const gameplayAiService = {
             if (currentTurn > 0 && currentTurn % 5 === 0) {
                const sliceLength = Math.min(slicedHistory.length, 10);
                const historyToCheck = slicedHistory.slice(-sliceLength);
-               const driftResult = await DynamicMemoryService.checkPersonaDrift(
+               const driftResult = await DynamicMemoryService.retryTask("DynamicMemoryService.checkPersonaDrift", () => DynamicMemoryService.checkPersonaDrift(
                  historyToCheck,
                  worldData,
                  settings,
                  campaignId
-               );
+               ));
                if (driftResult?.hasDrift && typeof window !== 'undefined') {
                  window.dispatchEvent(new CustomEvent('tavo_persona_drift', { detail: driftResult }));
                }
@@ -1138,6 +1202,24 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
             break;
           }
         }
+        
+        if (!contextualSummaryStream) {
+          try {
+            const slicedOutHistory = history.slice(0, finalHistoryStartIndex);
+            const bridgedSummary = await generateIncrementalSummaryForSlicedHistory(
+              slicedOutHistory,
+              worldData.summary || "",
+              settings
+            );
+            if (bridgedSummary) {
+              contextualSummaryStream = bridgedSummary;
+              history[finalHistoryStartIndex - 1].incrementalSummary = bridgedSummary;
+              console.log("[IncrementalSummary] Bridged memory successfully created:", bridgedSummary);
+            }
+          } catch (briefErr) {
+            console.warn("[IncrementalSummary] Bridged summary extraction failed:", briefErr);
+          }
+        }
       }
       if (!contextualSummaryStream) contextualSummaryStream = worldData.summary;
 
@@ -1483,84 +1565,89 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
             }
           }
 
-            // Process StoryBible Turn
-            if (settings.enableVectorMemory) {
-              const recentForBible = [
-                ...slicedHistory.slice(-4),
-                {
-                  role: "user" as const,
-                  text: cleanedInput,
-                  timestamp: Date.now(),
-                },
-                {
-                  role: "model" as const,
-                  text: accumulatedFullText,
-                  timestamp: Date.now() + 1,
-                },
-              ];
-              await storyBibleService.processTurn(
-                recentForBible,
-                campaignId,
-                settings,
-                currentTurn,
-              );
-              
-              if (currentTurn > 0 && currentTurn % 3 === 0) {
-                 await GraphRAGService.extractAndIntegrate(
-                   recentForBible,
-                   campaignId,
-                   settings
-                 );
-              }
+          // Run failed tasks queue processing to self-heal state consistency
+          await DynamicMemoryService.runFailedTasksQueue(settings, campaignId, worldData);
 
-              // DYNAMIC MEMORY SUMMARIZATION / CONSOLIDATION
-              if (currentTurn > 0 && currentTurn % 30 === 0) {
-                 // Run Memory Consolidation Engine (MCE) every 30 turns for cross-layer canonical grounding
-                 const consolidatedMemory = await DynamicMemoryService.consolidateAllMemoryLayers(
-                   worldData,
-                   settings,
-                   campaignId
-                 );
-                 if (consolidatedMemory) {
-                   worldData.summary = consolidatedMemory;
-                   if (typeof window !== 'undefined') {
-                     window.dispatchEvent(new CustomEvent('tavo_summary_update', { detail: consolidatedMemory }));
-                   }
-                 }
-              } else if (currentTurn > 0 && currentTurn % 15 === 0) {
-                 // Summarize the last 30 messages (approx 15 turns)
-                 const sliceLength = Math.min(slicedHistory.length, 30);
-                 const historyToSummarize = slicedHistory.slice(-sliceLength);
-                 const newSummary = await DynamicMemoryService.processCoreMemories(
-                   historyToSummarize,
-                   worldData,
-                   settings,
-                   campaignId
-                 );
-                 if (newSummary && typeof window !== 'undefined') {
-                   window.dispatchEvent(new CustomEvent('tavo_summary_update', { detail: newSummary }));
-                 }
-              }
-
-              // PERSONA DRIFT CHECK (EVERY 5 TURNS)
-              if (currentTurn > 0 && currentTurn % 5 === 0) {
-                 const sliceLength = Math.min(slicedHistory.length, 10);
-                 const historyToCheck = slicedHistory.slice(-sliceLength);
-                 const driftResult = await DynamicMemoryService.checkPersonaDrift(
-                   historyToCheck,
-                   worldData,
-                   settings,
-                   campaignId
-                 );
-                 if (driftResult?.hasDrift && typeof window !== 'undefined') {
-                   window.dispatchEvent(new CustomEvent('tavo_persona_drift', { detail: driftResult }));
-                 }
-              }
+          // Process StoryBible Turn
+          if (settings.enableVectorMemory) {
+            const recentForBible = [
+              ...slicedHistory.slice(-4),
+              {
+                role: "user" as const,
+                text: cleanedInput,
+                timestamp: Date.now(),
+              },
+              {
+                role: "model" as const,
+                text: accumulatedFullText,
+                timestamp: Date.now() + 1,
+              },
+            ];
+            
+            await DynamicMemoryService.retryTask("storyBibleService.processTurn", () => storyBibleService.processTurn(
+              recentForBible,
+              campaignId,
+              settings,
+              currentTurn,
+            ));
+            
+            if (currentTurn > 0 && currentTurn % 3 === 0) {
+               await DynamicMemoryService.retryTask("GraphRAGService.extractAndIntegrate", () => GraphRAGService.extractAndIntegrate(
+                 recentForBible,
+                 campaignId,
+                 settings
+               ));
             }
-          })().catch(err => {
-            console.warn("[Background Tasks Stream] Unhandled rejection caught gracefully:", err);
-          });
-        }
+
+            // DYNAMIC MEMORY SUMMARIZATION / CONSOLIDATION
+            if (currentTurn > 0 && currentTurn % 30 === 0) {
+               // Run Memory Consolidation Engine (MCE) every 30 turns for cross-layer canonical grounding
+               const consolidatedMemory = await DynamicMemoryService.retryTask("DynamicMemoryService.consolidateAllMemoryLayers", () => DynamicMemoryService.consolidateAllMemoryLayers(
+                 worldData,
+                 settings,
+                 campaignId
+               ));
+               if (consolidatedMemory) {
+                 worldData.summary = consolidatedMemory;
+                 if (typeof window !== 'undefined') {
+                   window.dispatchEvent(new CustomEvent('tavo_summary_update', { detail: consolidatedMemory }));
+                 }
+               }
+            } else if (currentTurn > 0 && currentTurn % 15 === 0) {
+               // Summarize the last 30 messages (approx 15 turns)
+               const sliceLength = Math.min(slicedHistory.length, 30);
+               const historyToSummarize = slicedHistory.slice(-sliceLength);
+               const newSummary = await DynamicMemoryService.retryTask("DynamicMemoryService.processCoreMemories", () => DynamicMemoryService.processCoreMemories(
+                 historyToSummarize,
+                 worldData,
+                 settings,
+                 campaignId
+               ));
+               if (newSummary && typeof window !== 'undefined') {
+                 window.dispatchEvent(new CustomEvent('tavo_summary_update', { detail: newSummary }));
+               }
+            }
+
+            // PERSONA DRIFT CHECK (EVERY 5 TURNS)
+            if (currentTurn > 0 && currentTurn % 5 === 0) {
+               const sliceLength = Math.min(slicedHistory.length, 10);
+               const historyToCheck = slicedHistory.slice(-sliceLength);
+               const driftResult = await DynamicMemoryService.retryTask("DynamicMemoryService.checkPersonaDrift", () => DynamicMemoryService.checkPersonaDrift(
+                 historyToCheck,
+                 worldData,
+                 settings,
+                 campaignId
+               ));
+               if (driftResult?.hasDrift && typeof window !== 'undefined') {
+                 window.dispatchEvent(new CustomEvent('tavo_persona_drift', { detail: driftResult }));
+               }
+            }
+          }
+        })().catch(err => {
+          console.warn("[Background Tasks Stream] Unhandled rejection caught gracefully:", err);
+        });
+      }
+
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

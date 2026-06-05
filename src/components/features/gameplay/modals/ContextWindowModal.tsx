@@ -179,6 +179,15 @@ const serializeRule = (parsed: Omit<ParsedRule, 'original' | 'index'>) => {
 };
 
 // Advanced Preset Library structured by RPG usecase
+const PRESET_USE_CASES = [
+    { id: 'ALL', label: '🌐 Tất cả' },
+    { id: 'Roleplay', label: '🎭 Roleplay' },
+    { id: 'Combat', label: '⚔️ Combat' },
+    { id: 'Storyline', label: '📜 Storyline' },
+    { id: 'Safety', label: '🛡️ An toàn' },
+    { id: 'Aesthetics', label: '✨ Thẩm mỹ' }
+];
+
 interface AdvancedPreset {
     title: string;
     category: string;
@@ -276,12 +285,283 @@ const PRESET_RULE_TEMPLATES: AdvancedPreset[] = [
     }
 ];
 
+interface NeuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    styles: any;
+    variant?: 'raised' | 'sunken' | 'accent';
+    size?: 'sm' | 'md' | 'lg';
+}
+
+const NeuButton: React.FC<NeuButtonProps> = ({ 
+    children, 
+    styles, 
+    variant = 'raised', 
+    size = 'md', 
+    className = '', 
+    ...props 
+}) => {
+    const [isPressed, setIsPressed] = useState(false);
+    
+    const sizeClasses = {
+        sm: 'px-2.5 py-1 text-[11px] rounded-lg tracking-wider font-bold',
+        md: 'px-4 py-2 text-xs rounded-xl tracking-wider font-black uppercase',
+        lg: 'px-6 py-3 text-sm rounded-2xl tracking-widest font-black uppercase',
+    };
+
+    let btnStyle: React.CSSProperties = {
+        border: styles.border,
+        transition: 'all 0.15s ease-out',
+    };
+
+    if (props.disabled) {
+        btnStyle = {
+            ...btnStyle,
+            opacity: 0.4,
+            boxShadow: 'none',
+            background: styles.bg,
+            color: styles.textMuted
+        };
+    } else if (variant === 'accent') {
+        btnStyle = {
+            ...btnStyle,
+            background: styles.accent,
+            color: '#ffffff',
+            borderColor: 'transparent',
+            boxShadow: isPressed ? 'inset 2px 2px 5px rgba(0,0,0,0.3)' : '0 4px 10px rgba(0,0,0,0.15)'
+        };
+    } else if (variant === 'sunken' || isPressed) {
+        btnStyle = {
+            ...btnStyle,
+            boxShadow: styles.shadowInner,
+            background: styles.bg,
+            color: styles.text
+        };
+    } else {
+        btnStyle = {
+            ...btnStyle,
+            boxShadow: styles.shadowButton,
+            background: styles.convexBg,
+            color: styles.text
+        };
+    }
+
+    return (
+        <button
+            onMouseDown={() => !props.disabled && setIsPressed(true)}
+            onMouseUp={() => setIsPressed(false)}
+            onMouseLeave={() => setIsPressed(false)}
+            onTouchStart={() => !props.disabled && setIsPressed(true)}
+            onTouchEnd={() => setIsPressed(false)}
+            style={btnStyle}
+            className={`transition-all hover:scale-[1.01] active:translate-y-[1px] flex items-center justify-center gap-1.5 ${sizeClasses[size]} ${className}`}
+            {...props}
+        >
+            {children}
+        </button>
+    );
+};
+
+interface NeuCardProps {
+    styles: any;
+    variant?: 'flat' | 'raised' | 'sunken' | 'fancy';
+    className?: string;
+    style?: React.CSSProperties;
+    children: React.ReactNode;
+    onClick?: () => void;
+}
+
+const NeuCard: React.FC<NeuCardProps> = ({ 
+    children, 
+    styles, 
+    variant = 'raised', 
+    className = '',
+    style = {},
+    onClick
+}) => {
+    let cardStyle: React.CSSProperties = {
+        border: styles.border,
+        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        ...style
+    };
+
+    if (variant === 'sunken') {
+        cardStyle = {
+            ...cardStyle,
+            boxShadow: styles.shadowInner,
+            background: styles.bg,
+        };
+    } else if (variant === 'flat') {
+        cardStyle = {
+            ...cardStyle,
+            boxShadow: 'none',
+            background: styles.flatBg,
+        };
+    } else if (variant === 'fancy') {
+        cardStyle = {
+            ...cardStyle,
+            boxShadow: styles.shadowOuter,
+            background: `linear-gradient(135deg, ${styles.bg}, ${styles.bg}ee)`,
+        };
+    } else {
+        cardStyle = {
+            ...cardStyle,
+            boxShadow: styles.shadowOuter,
+            background: styles.convexBg,
+        };
+    }
+
+    return (
+        <div 
+            onClick={onClick}
+            style={cardStyle} 
+            className={`rounded-2xl ${onClick ? 'cursor-pointer hover:scale-[1.005]' : ''} ${className}`}
+        >
+            {children}
+        </div>
+    );
+};
+
+interface NeuInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    styles: any;
+}
+
+const NeuInput: React.FC<NeuInputProps> = ({ styles, className = '', ...props }) => {
+    return (
+        <input
+            style={{
+                boxShadow: styles.shadowInner,
+                background: styles.bg,
+                border: styles.border,
+                color: styles.text
+            }}
+            className={`w-full px-3 py-2 text-xs rounded-xl outline-none placeholder:opacity-50 focus:border-stone-450 dark:focus:border-slate-700 transition-all ${className}`}
+            {...props}
+        />
+    );
+};
+
+interface NeuTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+    styles: any;
+}
+
+const NeuTextarea: React.FC<NeuTextareaProps> = ({ styles, className = '', ...props }) => {
+    return (
+        <textarea
+            style={{
+                boxShadow: styles.shadowInner,
+                background: styles.bg,
+                border: styles.border,
+                color: styles.text
+            }}
+            className={`w-full px-4 py-3 text-xs rounded-2xl outline-none placeholder:opacity-50 focus:border-stone-450 dark:focus:border-slate-700 transition-all resize-none ${className}`}
+            {...props}
+        />
+    );
+};
+
+interface NeuSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+    styles: any;
+}
+
+const NeuSelect: React.FC<NeuSelectProps> = ({ styles, className = '', children, ...props }) => {
+    return (
+        <select
+            style={{
+                boxShadow: styles.shadowButton,
+                background: styles.flatBg,
+                border: styles.border,
+                color: styles.text
+            }}
+            className={`px-3 py-2 text-xs rounded-xl outline-none cursor-pointer focus:border-stone-450 dark:focus:border-slate-700 transition-all ${className}`}
+            {...props}
+        >
+            {children}
+        </select>
+    );
+};
+
 const ContextWindowModal: React.FC<ContextWindowModalProps> = ({
     show, onClose, activeWorld, handleUpdateContextConfig,
     settings, history, turnCount, tawaPresetConfig, gameTime, lastAction,
     dynamicRules = [], setDynamicRules, isInline = false,
     initialTab, allowedTabs
 }) => {
+    const { theme } = useTheme();
+
+    const styles = useMemo(() => {
+        switch (theme) {
+            case 'light':
+                return {
+                    bg: '#e6ebf4', 
+                    text: '#2c3e50',
+                    textMuted: '#7f8c8d',
+                    accent: '#db2777', 
+                    border: '1px solid rgba(255, 255, 255, 0.75)',
+                    shadowOuter: '6px 6px 12px #c8d0dc, -6px -6px 12px #ffffff',
+                    shadowInner: 'inset 3px 3px 6px #cbd5e1, inset -3px -3px 6px #ffffff',
+                    shadowButton: '4px 4px 8px #c8d0dc, -4px -4px 8px #ffffff',
+                    shadowButtonActive: 'inset 2px 2px 4px #cbd5e1, inset -2px -2px 4px #ffffff',
+                    flatBg: 'linear-gradient(135deg, #edf2fc, #dee4ed)',
+                    convexBg: 'linear-gradient(135deg, #f2f7fc, #dae0e9)',
+                };
+            case 'dark':
+                return {
+                    bg: '#0b1329', 
+                    text: '#f1f5f9',
+                    textMuted: '#94a3b8',
+                    accent: '#f472b6',
+                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                    shadowOuter: '6px 6px 12px #040812, -6px -6px 12px #121e40',
+                    shadowInner: 'inset 3px 3px 6px #040812, inset -3px -3px 6px #121e40',
+                    shadowButton: '4px 4px 8px #040812, -4px -4px 8px #121e40',
+                    shadowButtonActive: 'inset 2px 2px 4px #040812, inset -2px -2px 4px #121e40',
+                    flatBg: 'linear-gradient(135deg, #0d162d, #080d1e)',
+                    convexBg: 'linear-gradient(135deg, #0f1c3a, #060a16)',
+                };
+            case 'pastel':
+                return {
+                    bg: '#e8e2d5', 
+                    text: '#2c1810',
+                    textMuted: '#7a6a60',
+                    accent: '#bf7575',
+                    border: '1px solid rgba(255, 255, 255, 0.75)',
+                    shadowOuter: '6px 6px 12px #cbc3b2, -6px -6px 12px #ffffff',
+                    shadowInner: 'inset 3px 3px 6px #cbc3b2, inset -3px -3px 6px #ffffff',
+                    shadowButton: '4px 4px 8px #cbc3b2, -4px -4px 8px #ffffff',
+                    shadowButtonActive: 'inset 2px 2px 4px #cbc3b2, inset -2px -2px 4px #ffffff',
+                    flatBg: 'linear-gradient(135deg, #f3ede2, #ddd6c8)',
+                    convexBg: 'linear-gradient(135deg, #f9f4ea, #d5cebf)',
+                };
+            case 'clay':
+                return {
+                    bg: '#debca3', 
+                    text: '#35251c',
+                    textMuted: '#7c6353',
+                    accent: '#cf5c36',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    shadowOuter: '6px 6px 12px #be967a, -6px -6px 12px #fadec4',
+                    shadowInner: 'inset 3px 3px 6px #be967a, inset -3px -3px 6px #fadec4',
+                    shadowButton: '4px 4px 8px #be967a, -4px -4px 8px #fadec4',
+                    shadowButtonActive: 'inset 2px 2px 4px #be967a, inset -2px -2px 4px #fadec4',
+                    flatBg: 'linear-gradient(135deg, #ebd0bc, #cca78d)',
+                    convexBg: 'linear-gradient(135deg, #f0d6c4, #c7a186)',
+                };
+            default:
+                return {
+                    bg: 'var(--theme-bg, #0b1329)',
+                    text: 'var(--theme-text, #f1f5f9)',
+                    textMuted: 'var(--theme-muted, #94a3b8)',
+                    accent: 'var(--theme-accent, #ec4899)',
+                    border: 'var(--neu-border, 1px solid rgba(255, 255, 255, 0.05))',
+                    shadowOuter: '6px 6px 12px var(--neu-shadow-dark, rgba(0,0,0,0.5)), -6px -6px 12px var(--neu-shadow-light, rgba(255,255,255,0.05))',
+                    shadowInner: 'inset 3px 3px 6px var(--neu-shadow-dark, rgba(0,0,0,0.5)), inset -3px -3px 6px var(--neu-shadow-light, rgba(255,255,255,0.05))',
+                    shadowButton: '4px 4px 8px var(--neu-shadow-dark, rgba(0,0,0,0.5)), -4px -4px 8px var(--neu-shadow-light, rgba(255,255,255,0.05))',
+                    shadowButtonActive: 'inset 2px 2px 4px var(--neu-shadow-dark, rgba(0,0,0,0.5)), inset -2px -2px 4px var(--neu-shadow-light, rgba(255,255,255,0.05))',
+                    flatBg: 'var(--neu-flat-bg, var(--theme-bg, #0b1329))',
+                    convexBg: 'var(--neu-convex-bg, var(--theme-bg, #0b1329))',
+                };
+        }
+    }, [theme]);
+
     const { isMobile: isMobileMode } = useResponsive();
     const tabsToRender = allowedTabs || ['rules', 'config', 'debugger'];
     const [activeContextTab, setActiveContextTab] = useState<'config' | 'rules' | 'debugger'>(
@@ -294,7 +574,9 @@ const ContextWindowModal: React.FC<ContextWindowModalProps> = ({
         }
     }, [initialTab]);
 
-    const [composerMode, setComposerMode] = useState<'advanced' | 'simple'>('advanced');
+    const [composerMode, setComposerMode] = useState<'advanced' | 'simple' | 'ai-assist'>('advanced');
+    const [mobileRuleSubTab, setMobileRuleSubTab] = useState<'editor' | 'presets'>('editor');
+    const [selectedPresetUseCase, setSelectedPresetUseCase] = useState<string>('ALL');
     
     // Core states
     const [searchQuery, setSearchQuery] = useState('');
@@ -1188,525 +1470,910 @@ const ContextWindowModal: React.FC<ContextWindowModalProps> = ({
 
                 {/* TAB 1: RULES MANAGER */}
                 {activeContextTab === 'rules' && (
-                    <div className={`flex-1 overflow-y-auto custom-scrollbar ${isInline ? 'p-3 space-y-4' : 'p-5 space-y-6'}`}>
+                    <div className={`flex-1 overflow-y-auto custom-scrollbar ${isInline ? 'p-3 space-y-4' : 'p-5 space-y-6'}`} style={{ background: styles.bg }}>
                         
-                        {/* Introduction Callout */}
-                        {isInline ? (
-                            <div className="p-2.5 bg-stone-200 dark:bg-slate-900/50 rounded-lg border border-stone-300 dark:border-slate-850 flex justify-between items-center w-full gap-2 text-left">
-                                <div className="flex gap-2 items-start">
-                                    <Sparkles size={14} className="text-mystic-accent shrink-0 mt-0.5 animate-pulse" />
-                                    <p className="text-xs text-stone-605 dark:text-slate-450 leading-normal">
-                                        Quy chế cưỡng chế tối thượng được nhúng cố định thẳng vào System Prompt cốt lõi.
-                                    </p>
-                                </div>
-                                <button 
-                                    onClick={() => {
-                                        setImportExportText(JSON.stringify(dynamicRules, null, 2));
-                                        setShowImportExport(true);
-                                    }}
-                                    className="px-2 py-1 bg-stone-300 dark:bg-slate-800 hover:bg-mystic-accent hover:text-mystic-900 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap shrink-0"
-                                >
-                                    Nhập/Xuất
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="p-4 bg-stone-200 dark:bg-slate-900/50 rounded-xl border border-stone-300 dark:border-slate-800 flex justify-between items-center max-w-7xl mx-auto w-full gap-4">
-                                <div className="flex gap-3 items-start text-left">
-                                    <Sparkles size={18} className="text-mystic-accent shrink-0 mt-0.5 animate-pulse" />
+                        {/* Modern Refined Banner - Mobile-first & Sleek */}
+                        <div className={`relative overflow-hidden rounded-2xl border transition-all duration-300 max-w-7xl mx-auto w-full ${
+                            isInline ? 'p-4' : 'p-5'
+                        }`}
+                        style={{
+                            background: `linear-gradient(135deg, ${styles.bg}, ${styles.convexBg || '#dae0e9'})`,
+                            borderColor: 'rgba(168, 85, 247, 0.25)',
+                            color: styles.text
+                        }}>
+                            {/* Decorative Blur Background Element */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+                            
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+                                <div className="flex gap-3.5 items-start text-left">
+                                    <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 shrink-0">
+                                        <Sparkles size={18} className="animate-pulse" />
+                                    </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-stone-850 dark:text-slate-200">Kiểm soát dòng văn bằng Luật lệ Tối thượng (Rules and Constraints Panel)</h3>
-                                        <p className="text-xs text-stone-605 dark:text-slate-450 leading-relaxed mt-0.5">
-                                            Thiết chế này cho phép ghim trực tiếp quy tắc tùy biến vào sâu gốc rễ System Prompt của LLM. AI Tawa buộc phải thi triển tuyệt đối mà không bị các chỉ thị thông thường bẻ hướng.
+                                        <h3 className="font-extrabold text-sm md:text-base tracking-tight" style={{ color: styles.text }}>
+                                            Kịch Bản Luật Lệ Tối Cao
+                                            <span className="ml-2 inline-block font-mono text-[9px] font-black uppercase bg-purple-500/15 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/25">
+                                                Rules Engine
+                                            </span>
+                                        </h3>
+                                        <p className="text-[11px] font-medium leading-relaxed mt-0.5" style={{ color: styles.textMuted }}>
+                                            Ràng buộc trực hệ chỉ thị cưỡng chế vào nền tảng tư duy bối cảnh của LLM. Tawa bắt buộc phải tuyệt đối tôn trọng các chế tài vận hành được thiết chế tại đây.
                                         </p>
                                     </div>
                                 </div>
                                 <div className="shrink-0 flex gap-2">
                                     <button 
+                                        type="button"
                                         onClick={() => {
                                             setImportExportText(JSON.stringify(dynamicRules, null, 2));
                                             setShowImportExport(true);
                                         }}
-                                        className="px-3 py-1.5 bg-stone-300 dark:bg-slate-800 hover:bg-mystic-accent hover:text-mystic-900 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                                        className="flex items-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl bg-purple-500 text-white hover:bg-purple-600 active:scale-95 transition-all shadow-md active:translate-y-[1px]"
                                     >
-                                        <FileUp size={13} /> Nhập / Xuất luật
+                                        <FileUp size={14} /> Nhập / Xuất Quy Chế
                                     </button>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
-                        {/* Create Form & Presets Split */}
+                        {/* Mobile Segmented sliding controller */}
+                        <div className="block lg:hidden w-full p-1 bg-stone-250/50 dark:bg-slate-900/40 rounded-xl mb-4 border border-stone-300/20 dark:border-slate-800/30 max-w-7xl mx-auto w-full">
+                            <div className="grid grid-cols-2 gap-1 text-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileRuleSubTab('editor')}
+                                    className={`py-2 text-[11px] font-black tracking-wide ease-in-out transition-all rounded-lg duration-200 ${
+                                        mobileRuleSubTab === 'editor'
+                                            ? 'bg-white dark:bg-stone-800 shadow-sm text-stone-900 dark:text-slate-100 font-extrabold'
+                                            : 'text-stone-500 hover:text-stone-700 dark:text-slate-400 dark:hover:text-slate-200'
+                                    }`}
+                                >
+                                    ✍️ Soạn Thảo Luật
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMobileRuleSubTab('presets')}
+                                    className={`py-2 text-[11px] font-black tracking-wide ease-in-out transition-all rounded-lg duration-200 ${
+                                        mobileRuleSubTab === 'presets'
+                                            ? 'bg-white dark:bg-stone-800 shadow-sm text-stone-900 dark:text-slate-100 font-extrabold'
+                                            : 'text-stone-500 hover:text-stone-700 dark:text-slate-400 dark:hover:text-slate-200'
+                                    }`}
+                                >
+                                    📚 Thư Viện Mẫu ({PRESET_RULE_TEMPLATES.length})
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Split Panels: Form & Presets Grid */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 max-w-7xl mx-auto w-full">
                             
-                            {/* Creator Card (7 Cols) */}
-                            <div className={`bg-stone-200 dark:bg-slate-900/40 rounded-xl border border-stone-300 dark:border-slate-800 flex flex-col justify-between ${isInline ? 'lg:col-span-12 p-3 gap-3' : 'lg:col-span-7 p-5'}`}>
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-center">
-                                                    <h4 className="text-xs font-black text-mystic-accent uppercase tracking-wider flex items-center gap-1.5">
-                                                        <Settings size={13} /> Thiết Lập Luật Mới
-                                                    </h4>
-                                                    <div className="flex bg-stone-300 dark:bg-slate-800/80 rounded px-1.5 py-0.5 text-[10px]">
-                                                        <button 
-                                                            onClick={() => setComposerMode('advanced')}
-                                                            className={`px-2 py-0.5 font-bold rounded transition-all ${composerMode === 'advanced' ? 'bg-mystic-accent text-mystic-900' : 'text-stone-500 dark:text-slate-400'}`}
-                                                        >
-                                                            Biên Soạn Chi Tiết
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => setComposerMode('simple')}
-                                                            className={`px-2 py-0.5 font-bold rounded transition-all ${composerMode === 'simple' ? 'bg-mystic-accent text-mystic-900' : 'text-stone-500 dark:text-slate-400'}`}
-                                                        >
-                                                            Soạn Nhanh
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {composerMode === 'advanced' ? (
-                                                    <div className="space-y-3">
-                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                                            {/* Title field */}
-                                                            <div className="md:col-span-6 space-y-1 text-left">
-                                                                <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Tên quy chế (Ví dụ OOC)</label>
-                                                                <input 
-                                                                    type="text" 
-                                                                    value={ruleTitle}
-                                                                    onChange={(e) => setRuleTitle(e.target.value)}
-                                                                    placeholder="Mẹo: Đặt súc tích làm từ khóa..."
-                                                                    className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-lg px-3 py-1.5 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all"
-                                                                />
-                                                            </div>
-                                                            {/* Category dropdown */}
-                                                            <div className="md:col-span-3 space-y-1 text-left">
-                                                                <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Loại hành vi</label>
-                                                                <select 
-                                                                    value={ruleCategory}
-                                                                    onChange={(e) => setRuleCategory(e.target.value)}
-                                                                    className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-lg px-2 py-1.5 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all"
-                                                                >
-                                                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                                                </select>
-                                                            </div>
-                                                            {/* Priority dropdown */}
-                                                            <div className="md:col-span-3 space-y-1 text-left">
-                                                                <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Độ ưu tiên</label>
-                                                                <select 
-                                                                    value={rulePriority}
-                                                                    onChange={(e) => setRulePriority(e.target.value)}
-                                                                    className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-lg px-2 py-1.5 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all"
-                                                                >
-                                                                    {PRIORITIES.map(pr => <option key={pr} value={pr}>{pr}</option>)}
-                                                                </select>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Instruction text-area */}
-                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                                            <div className="md:col-span-8 space-y-1 text-left">
-                                                                <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Mô tả chỉ thị chi tiết</label>
-                                                                <textarea
-                                                                    value={ruleContent}
-                                                                    onChange={(e) => setRuleContent(e.target.value)}
-                                                                    placeholder="Nội dung luật buộc AI phải tôn trọng (ví dụ: Không bao giờ mô tả thế nhân vật của tôi...)"
-                                                                    className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-xl px-4 py-3 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all resize-none h-[110px]"
-                                                                />
-                                                            </div>
-                                                            <div className="md:col-span-4 space-y-2 text-left flex flex-col justify-between">
-                                                                <div className="space-y-1">
-                                                                    <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest flex items-center gap-1">
-                                                                        <span>⚡ Điều kiện kích hoạt</span>
-                                                                        <span className="text-[8px] text-amber-500 font-normal">[Nâng cao]</span>
-                                                                    </label>
-                                                                    <input 
-                                                                        type="text" 
-                                                                        value={ruleCondition}
-                                                                        onChange={(e) => setRuleCondition(e.target.value)}
-                                                                        placeholder="Ví dụ: turn > 10, hour = 18..."
-                                                                        className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-lg px-3 py-1.5 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all"
-                                                                    />
-                                                                </div>
-                                                                <div className="space-y-1">
-                                                                    <span className="text-[9px] text-stone-500 uppercase font-black tracking-wider block">Gợi ý nhanh (Bấm để chọn):</span>
-                                                                    <div className="flex flex-wrap gap-1">
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => setRuleCondition('turn > 5')}
-                                                                            className="text-[9px] px-1.5 py-0.5 bg-stone-350 dark:bg-slate-800 hover:bg-mystic-accent hover:text-mystic-900 rounded font-mono transition-colors border border-stone-400 dark:border-slate-700/50"
-                                                                        >
-                                                                            Lượt &gt; 5
-                                                                        </button>
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => setRuleCondition('hour >= 18')}
-                                                                            className="text-[9px] px-1.5 py-0.5 bg-stone-350 dark:bg-slate-800 hover:bg-mystic-accent hover:text-mystic-900 rounded font-mono transition-colors border border-stone-400 dark:border-slate-700/50"
-                                                                        >
-                                                                            Ban đêm (&gt;=18h)
-                                                                        </button>
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => setRuleCondition('keyword: chiến đấu')}
-                                                                            className="text-[9px] px-1.5 py-0.5 bg-stone-350 dark:bg-slate-800 hover:bg-mystic-accent hover:text-mystic-900 rounded font-mono transition-colors border border-stone-400 dark:border-slate-700/50"
-                                                                        >
-                                                                            Thoại chứa "chiến đấu"
-                                                                        </button>
-                                                                        <button 
-                                                                            type="button"
-                                                                            onClick={() => setRuleCondition('')}
-                                                                            className="text-[9px] px-1.5 py-0.5 bg-red-500/10 text-red-500 hover:bg-red-550/25 rounded font-mono transition-colors border border-red-500/20"
-                                                                        >
-                                                                            Xóa
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-1 text-left">
-                                                        <label className="text-[10px] font-black text-stone-500 uppercase tracking-widest">Nội dung dòng văn chỉ thị trực tiếp</label>
-                                                        <textarea
-                                                            value={ruleContent}
-                                                            onChange={(e) => setRuleContent(e.target.value)}
-                                                            placeholder="Viết một văn phạm nhanh (Hệ thống sẽ mặc định nhóm Cấu Trúc chung)..."
-                                                            className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-305 dark:border-slate-850 rounded-xl px-4 py-3 text-xs text-stone-850 dark:text-slate-100 outline-none focus:border-mystic-accent transition-all resize-none h-[162px]"
-                                                        />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="pt-4 flex justify-end">
-                                                <Button 
-                                                    onClick={handleAddRule}
-                                                    disabled={!ruleContent.trim()}
-                                                    className="w-full md:w-auto px-6 py-2 bg-mystic-accent text-mystic-900 font-black uppercase text-xs tracking-wider hover:bg-sky-400 flex items-center justify-center gap-1.5 rounded-lg shrink-0"
-                                                >
-                                                    <Plus size={15} /> Thêm Quy Tắc Vào Danh Sách
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        {/* Presets Sidebar (5 Cols) */}
-                                        <div className={`bg-stone-200 dark:bg-slate-900/10 rounded-xl border border-stone-300 dark:border-slate-800 space-y-3 flex flex-col justify-start ${isInline ? 'lg:col-span-12 p-3' : 'lg:col-span-5 p-5'}`}>
-                                            <h4 className="text-xs font-black text-stone-500 uppercase tracking-wider flex items-center gap-1.5 text-left">
-                                                <Zap size={13} className="text-amber-500" /> Bản Mẫu Gợi Ý (Quick Presets)
-                                            </h4>
-                                            <p className="text-[10px] text-stone-500 text-left leading-normal">
-                                                Nhấp vào để tải một quy chuẩn tiêu biểu vào Trình Biên Soạn, tha hồ hiệu chỉnh trước khi đưa vào hàng đợi:
-                                            </p>
-
-                                            <div className="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar-slim pr-1">
-                                                {PRESET_RULE_TEMPLATES.map((preset, idx) => {
-                                                    const isLoadedInEditor = ruleContent === preset.content;
-                                                    return (
-                                                        <div 
-                                                            key={idx}
-                                                            onClick={() => handleSelectPreset(preset)}
-                                                            className={`p-3 rounded-lg border text-left transition-all cursor-pointer hover:shadow-sm flex justify-between items-start gap-1 ${
-                                                                isLoadedInEditor 
-                                                                    ? 'bg-mystic-accent/15 border-mystic-accent'
-                                                                    : 'bg-stone-50 dark:bg-slate-900/60 border-stone-300 dark:border-slate-850 hover:border-stone-400 dark:hover:border-slate-800'
-                                                            }`}
-                                                        >
-                                                            <div className="flex-1 space-y-0.5">
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="text-[9px] font-black uppercase bg-stone-200 dark:bg-slate-800 text-stone-600 dark:text-slate-400 px-1 py-0.2 rounded font-mono">
-                                                                        {preset.category}
-                                                                    </span>
-                                                                    <span className="font-bold text-xs text-stone-850 dark:text-slate-200 truncate max-w-[150px]">
-                                                                        {preset.title}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-[10px] text-stone-550 dark:text-slate-500 line-clamp-1">
-                                                                    {preset.desc}
-                                                                </p>
-                                                            </div>
-                                                            <span className="text-[9px] font-black tracking-wider text-mystic-accent shrink-0 uppercase">
-                                                                + Nạp chỉnh
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                            {/* Panel 1: Creation Dashboard (7 Cols or full on active subtab) */}
+                            <div 
+                                className={`lg:col-span-7 border border-stone-200/80 dark:border-slate-800/80 rounded-2xl p-5 md:p-6 transition-all duration-300 flex flex-col justify-between ${
+                                    mobileRuleSubTab === 'editor' ? 'block' : 'hidden lg:flex'
+                                }`}
+                                style={{
+                                    background: styles.convexBg,
+                                }}
+                            >
+                                <div className="space-y-5">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-stone-200/40 dark:border-slate-800/40 pb-4">
+                                        <h4 style={{ color: styles.accent }} className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
+                                            <Settings size={14} /> Thiết Lập Luật Vận Hành
+                                        </h4>
+                                        <div style={{ background: styles.bg }} className="flex rounded-xl p-1 text-[10px] w-fit">
+                                            <button 
+                                                type="button"
+                                                onClick={() => setComposerMode('advanced')}
+                                                style={composerMode === 'advanced' ? { background: styles.accent, color: '#ffffff' } : { color: styles.textMuted }}
+                                                className="px-3 py-1.5 font-bold rounded-lg transition-all"
+                                            >
+                                                Biên Soạn Chỉ Số
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setComposerMode('simple')}
+                                                style={composerMode === 'simple' ? { background: styles.accent, color: '#ffffff' } : { color: styles.textMuted }}
+                                                className="px-3 py-1.5 font-bold rounded-lg transition-all"
+                                            >
+                                                Soạn Nhanh
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setComposerMode('ai-assist')}
+                                                style={composerMode === 'ai-assist' ? { background: 'linear-gradient(135deg, rgb(147, 51, 234), rgb(79, 70, 229))', color: '#ffffff' } : { color: styles.textMuted }}
+                                                className="px-3 py-1.5 font-bold rounded-lg transition-all flex items-center gap-1"
+                                            >
+                                                <span>✨ AI Trợ Lý</span>
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* Filters & Actual Rules Queue */}
-                                    <div className="max-w-7xl mx-auto w-full space-y-4">
-                                        
-                                        {/* Filter Sub-header */}
-                                        <div className="flex flex-col md:flex-row gap-3 justify-between items-center border-b border-stone-350 dark:border-slate-800 pb-3">
-                                            <div className="text-left">
-                                                <h4 className="text-xs font-black text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
-                                                    Danh Sách Quy Chế Vận Hành ({filteredRules.length} / {dynamicRules.length})
-                                                </h4>
-                                                <p className="text-[10px] text-stone-500 mt-0.5">Bạn có thể thứ tự kéo ưu tiên, bật tắt nhanh chóng, hoặc tinh chỉnh văn phong bất cứ lúc nào</p>
-                                            </div>
-
-                                            {/* Search and filters UI */}
-                                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                                                {/* Search */}
-                                                <div className="relative flex-1 md:flex-initial">
-                                                    <Search size={14} className="absolute left-3 top-2.5 text-stone-450 dark:text-slate-500" />
+                                    {composerMode === 'advanced' && (
+                                        <div className="space-y-4 animate-in fade-in duration-300">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Meta Title */}
+                                                <div className="space-y-1.5 text-left">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider pl-1" style={{ color: styles.textMuted }}>Tiêu Đề Luật Lệ (Key Tag)</label>
                                                     <input 
-                                                        type="text"
-                                                        value={searchQuery}
-                                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                                        placeholder="Lọc nội dung luật..."
-                                                        className="w-full md:w-48 bg-stone-50 dark:bg-slate-900 border border-stone-300 dark:border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-stone-850 dark:text-slate-100 placeholder-stone-450 focus:outline-none focus:border-mystic-accent"
+                                                        type="text" 
+                                                        value={ruleTitle}
+                                                        onChange={(e) => setRuleTitle(e.target.value)}
+                                                        placeholder="Ví dụ: Chống nói nhảm, Chế tài HP..."
+                                                        style={{
+                                                            background: styles.bg,
+                                                            border: styles.border,
+                                                            color: styles.text
+                                                        }}
+                                                        className="w-full px-3.5 py-2.5 text-xs rounded-xl outline-none placeholder:opacity-50 font-bold focus:border-stone-400 dark:focus:border-slate-700 transition-all shadow-inner"
                                                     />
                                                 </div>
 
-                                                {/* Category Filter */}
-                                                <select 
-                                                    value={selectedFilterCategory}
-                                                    onChange={(e) => setSelectedFilterCategory(e.target.value)}
-                                                    className="bg-stone-50 dark:bg-slate-900 border border-stone-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-stone-850 dark:text-slate-200 outline-none"
-                                                >
-                                                    <option value="ALL">Mọi nhóm</option>
-                                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                                </select>
+                                                {/* Meta Scope */}
+                                                <div className="space-y-1.5 text-left">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider pl-1" style={{ color: styles.textMuted }}>Phạm vi ứng dụng</label>
+                                                    <div className="grid grid-cols-3 gap-1 bg-stone-200/50 dark:bg-slate-900/40 p-1 rounded-xl border border-stone-200/30 dark:border-slate-800/30">
+                                                        {(['global', 'chapter', 'scene'] as const).map(sc => (
+                                                            <button
+                                                                key={sc}
+                                                                type="button"
+                                                                onClick={() => setRuleScope(sc)}
+                                                                className={`py-1.5 text-[9.5px] font-black rounded-lg transition-all uppercase ${
+                                                                    ruleScope === sc
+                                                                        ? 'bg-white dark:bg-slate-800 shadow-sm'
+                                                                        : 'opacity-65 hover:opacity-100'
+                                                                }`}
+                                                                style={{ color: ruleScope === sc ? styles.accent : styles.textMuted }}
+                                                            >
+                                                                {sc === 'global' ? 'Thế Giới' : sc === 'chapter' ? 'Chương' : 'Cảnh'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                {/* Status Filter */}
-                                                <select 
-                                                    value={selectedFilterStatus}
-                                                    onChange={(e) => setSelectedFilterStatus(e.target.value as any)}
-                                                    className="bg-stone-50 dark:bg-slate-900 border border-stone-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-stone-850 dark:text-slate-200 outline-none"
-                                                >
-                                                    <option value="ALL">Mọi trạng thái</option>
-                                                    <option value="ACTIVE">Kích hoạt</option>
-                                                    <option value="DISABLED">Đang tắt</option>
-                                                </select>
+                                            {/* Advanced Category Select Chips (No dropdowns!) */}
+                                            <div className="space-y-1.5 text-left">
+                                                <label className="text-[10px] font-black uppercase tracking-wider pl-1 block" style={{ color: styles.textMuted }}>Danh Mục Phân Hành</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {CATEGORIES.map(cat => {
+                                                        const isSelected = ruleCategory === cat;
+                                                        return (
+                                                            <button
+                                                                key={cat}
+                                                                type="button"
+                                                                onClick={() => setRuleCategory(cat)}
+                                                                className={`px-3 py-1.5 text-[10px] font-extrabold rounded-xl border transition-all duration-200 ${
+                                                                    isSelected
+                                                                        ? 'bg-purple-500/10 border-purple-500 text-purple-600 dark:text-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.12)] scale-[1.02]'
+                                                                        : 'bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800/80 text-stone-600 dark:text-slate-400 hover:bg-stone-50 dark:hover:bg-slate-850'
+                                                                }`}
+                                                            >
+                                                                {cat}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
 
-                                                {dynamicRules.length > 0 && (
-                                                    <button 
-                                                        onClick={() => {
-                                                            if (setDynamicRules) setDynamicRules([]);
+                                            {/* Advanced Priority Select Chips (No dropdowns!) */}
+                                            <div className="space-y-1.5 text-left">
+                                                <label className="text-[10px] font-black uppercase tracking-wider pl-1 block" style={{ color: styles.textMuted }}>Độ Ưu Tiên Áp Dụng</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {PRIORITIES.map(pr => {
+                                                        const isSelected = rulePriority === pr;
+                                                        return (
+                                                            <button
+                                                                key={pr}
+                                                                type="button"
+                                                                onClick={() => setRulePriority(pr)}
+                                                                className={`px-3 py-1.5 text-[10px] font-extrabold rounded-xl border transition-all duration-200 ${
+                                                                    isSelected
+                                                                        ? 'bg-pink-500/10 border-pink-500 text-pink-600 dark:text-pink-400 shadow-[0_0_12px_rgba(236,72,153,0.12)] scale-[1.02]'
+                                                                        : 'bg-stone-50/50 dark:bg-slate-900/40 border-stone-200/80 dark:border-slate-800/80 text-stone-600 dark:text-slate-400 hover:bg-stone-50 dark:hover:bg-slate-850'
+                                                                }`}
+                                                            >
+                                                                {pr}
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+
+                                            {/* Advanced Text Area with description */}
+                                            <div className="space-y-1.5 text-left">
+                                                <div className="flex justify-between items-center px-1">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider" style={{ color: styles.textMuted }}>Chỉ Thị Ràng Buộc Chi Tiết</label>
+                                                    <span className="text-[9px] font-bold opacity-60" style={{ color: styles.text }}>
+                                                        {ruleContent.length} ký tự
+                                                    </span>
+                                                </div>
+                                                <textarea
+                                                    value={ruleContent}
+                                                    onChange={(e) => setRuleContent(e.target.value)}
+                                                    placeholder="Ví dụ: Khi người chơi bị thương quá nặng, không bao giờ tự tả nhân vật hồi phục ngay lập tức mà phải trải qua cơn đau đớn kịch liệt..."
+                                                    style={{
+                                                        background: styles.bg,
+                                                        border: styles.border,
+                                                        color: styles.text
+                                                    }}
+                                                    className="w-full px-4 py-3 text-xs rounded-xl h-24 outline-none placeholder:opacity-50 resize-none font-bold focus:border-stone-400 dark:focus:border-slate-700 transition-all shadow-inner"
+                                                />
+                                            </div>
+
+                                            {/* Activate Condition Trigger Builder */}
+                                            <div className="bg-stone-50 dark:bg-slate-900/50 border border-stone-200/40 dark:border-slate-800 p-4 rounded-xl space-y-2 text-left animate-in slide-in-from-right duration-250">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-yellow-500">⚡</span>
+                                                    <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: styles.text }}>Điều Kiện Kích Hoạt Tự Động</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input 
+                                                        type="text" 
+                                                        value={ruleCondition}
+                                                        onChange={(e) => setRuleCondition(e.target.value)}
+                                                        placeholder="Cú pháp: turn > 10, hour >= 18"
+                                                        style={{
+                                                            background: styles.bg,
+                                                            border: styles.border,
+                                                            color: styles.text
                                                         }}
-                                                        className="px-2.5 py-1.5 bg-red-500/10 text-red-500 hover:bg-red-500/25 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer border-none flex items-center gap-1 shrink-0"
-                                                    >
-                                                        <Trash2 size={12} /> Xóa hết 
-                                                    </button>
-                                                )}
+                                                        className="w-full px-3 py-2 text-xs rounded-lg outline-none placeholder:opacity-50 font-mono focus:border-stone-300 transition-all font-bold"
+                                                    />
+                                                    <div className="flex flex-wrap gap-1 items-center">
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setRuleCondition('turn > 5')}
+                                                            className="text-[9px] font-bold px-2 py-1 bg-stone-200/60 dark:bg-slate-800 text-stone-600 dark:text-slate-300 rounded border border-transparent hover:border-stone-350 dark:hover:border-slate-700 transition-all"
+                                                        >
+                                                            Lượt &gt; 5
+                                                        </button>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setRuleCondition('hour >= 18')}
+                                                            className="text-[9px] font-bold px-2 py-1 bg-stone-200/60 dark:bg-slate-800 text-stone-600 dark:text-slate-300 rounded border border-transparent hover:border-stone-350 dark:hover:border-slate-700 transition-all"
+                                                        >
+                                                            Đêm (18h+)
+                                                        </button>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setRuleCondition('keyword: chiến đấu')}
+                                                            className="text-[9px] font-bold px-2 py-1 bg-stone-200/60 dark:bg-slate-800 text-stone-600 dark:text-slate-300 rounded border border-transparent hover:border-stone-350 dark:hover:border-slate-700 transition-all"
+                                                        >
+                                                            Chiến đấu
+                                                        </button>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setRuleCondition('')}
+                                                            className="text-[9px] font-black px-2 py-1 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded hover:bg-red-500/15 transition-all"
+                                                        >
+                                                            Xóa
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
+                                    )}
 
-                                        {/* Rules Cards Render */}
-                                        {filteredRules.length === 0 ? (
-                                            <div className="p-12 border-2 border-dashed border-stone-300 dark:border-slate-800 rounded-xl text-center space-y-2 bg-stone-200/50 dark:bg-slate-900/10 max-w-7xl mx-auto w-full">
-                                                <AlertTriangle size={36} className="mx-auto text-stone-400 dark:text-slate-600" />
-                                                <p className="text-xs font-bold text-stone-500 dark:text-slate-400">
-                                                    Không tìm thấy điều luật vận hành nào phù hợp.
-                                                </p>
-                                                <p className="text-xs text-stone-400 dark:text-slate-600 max-w-sm mx-auto">
-                                                    Hãy thử xóa bộ lọc tìm kiếm hoặc kích hoạt bản phối mẫu khuyên dùng ở trình bảng phía bên trên.
+                                    {composerMode === 'simple' && (
+                                        <div className="space-y-4 animate-in fade-in duration-300">
+                                            <div className="space-y-1.5 text-left">
+                                                <label className="text-[10px] font-black uppercase tracking-wider pl-1" style={{ color: styles.textMuted }}>Dòng Văn Bản Ràng Buộc Thô</label>
+                                                <textarea
+                                                    value={ruleContent}
+                                                    onChange={(e) => setRuleContent(e.target.value)}
+                                                    placeholder="Ví dụ: Tuyệt đối không cho phép hồi máu mà không nạp sinh mệnh đan..."
+                                                    style={{
+                                                        background: styles.bg,
+                                                        border: styles.border,
+                                                        color: styles.text
+                                                    }}
+                                                    className="w-full px-4 py-3.5 text-xs rounded-xl h-48 outline-none placeholder:opacity-50 resize-none font-bold focus:border-stone-400 dark:focus:border-slate-700 transition-all shadow-inner"
+                                                />
+                                                <p className="text-[10px]" style={{ color: styles.textMuted }}>
+                                                    * Biên soạn thô sẽ mặc định xếp nhóm ⚙️ Cấu trúc và ĐỘ Ưu Tiên 🔴 TUYỆT ĐỐI.
                                                 </p>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-3 max-w-7xl mx-auto w-full">
-                                                {filteredRules.map((parsedRule) => {
-                                                    const isEditing = editingIndex === parsedRule.index;
-                                                    const isSomeoneElseEditing = editingIndex !== null && !isEditing;
-                                                    const catStyle = CATEGORY_STYLES[parsedRule.category] || CATEGORY_STYLES['⚙️ Khác'];
-                                                    const prioStyle = PRIORITY_STYLES[parsedRule.priority] || PRIORITY_STYLES['🟡 LINH HOẠT'];
-                                                    
-                                                    // Real-time evaluation
-                                                    const hasCond = parsedRule.condition && parsedRule.condition.trim() !== '';
-                                                    const condEval = hasCond ? evaluateRuleConditionClient(parsedRule.condition) : { active: true, label: 'Luôn áp dụng' };
+                                        </div>
+                                    )}
 
-                                                    return (
-                                                        <div 
-                                                            key={parsedRule.index}
-                                                            className={`border rounded-xl p-4 flex gap-4 transition-all duration-250 relative group text-left ${
-                                                                isEditing
-                                                                    ? 'bg-amber-500/5 dark:bg-amber-500/5 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.25)] scale-[1.015] z-10'
-                                                                    : isSomeoneElseEditing
-                                                                        ? 'opacity-30 border-stone-300 dark:border-slate-850 bg-stone-100/50 dark:bg-slate-900/10 select-none pointer-events-none'
-                                                                        : parsedRule.isDisabled 
-                                                                            ? 'opacity-60 border-stone-350 dark:border-slate-850 bg-stone-250/50 dark:bg-slate-950/20' 
-                                                                            : 'bg-stone-200 dark:bg-slate-900 border-stone-300 dark:border-slate-800 hover:border-mystic-accent/30 shadow-sm'
-                                                            }`}
+                                    {composerMode === 'ai-assist' && (
+                                        <div className="space-y-4 animate-in fade-in duration-300">
+                                            <div className="bg-stone-50 dark:bg-slate-900/30 border border-stone-200/60 dark:border-slate-800/60 rounded-xl p-4 space-y-3.5">
+                                                <div className="flex gap-2.5 items-center">
+                                                    <span className="p-1.5 px-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 animate-bounce">✨</span>
+                                                    <div className="text-left">
+                                                        <span className="text-xs font-black" style={{ color: styles.text }}>AI Thiết Kế Luật Lệ Tawa</span>
+                                                        <p className="text-[10.5px]" style={{ color: styles.textMuted }}>Sinh mới từ ý tưởng, viết lại chuyên nghiệp, hoặc kiểm lỗi xung đột logic hệ thống</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-1.5 text-left">
+                                                    <label className="text-[10px] font-black uppercase tracking-wider pl-1" style={{ color: styles.textMuted }}>Nhập Ý Tưởng Thô Hoặc Đề Bài</label>
+                                                    <textarea
+                                                        value={aiAssistConcept}
+                                                        onChange={(e) => setAiAssistConcept(e.target.value)}
+                                                        placeholder="Ví dụ: Tránh việc nhân vật chính quá bá đạo, bắt có hệ thống phạt thể lực khi tung kiếm kỹ liên tục..."
+                                                        style={{
+                                                            background: styles.bg,
+                                                            border: styles.border,
+                                                            color: styles.text
+                                                        }}
+                                                        className="w-full px-3.5 py-2.5 text-xs rounded-xl h-24 outline-none placeholder:opacity-50 resize-none font-bold focus:border-purple-500 transition-all shadow-inner"
+                                                    />
+                                                </div>
+                                                <div className="flex flex-wrap gap-2 pt-1 lg:justify-start justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCallAiAssist('draft')}
+                                                        disabled={aiAssistLoading || !aiAssistConcept.trim()}
+                                                        className={`flex items-center gap-1.5 text-[10px] font-extrabold px-3 py-2 rounded-xl transition-all shadow-sm ${
+                                                            aiAssistLoading
+                                                                ? 'opacity-40 cursor-wait'
+                                                                : 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white active:scale-95'
+                                                        }`}
+                                                    >
+                                                        {aiAssistLoading ? 'Đang phân tích...' : '✍️ Đắp Luật Chuẩn 100%'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCallAiAssist('rephrase')}
+                                                        disabled={aiAssistLoading || !ruleContent.trim()}
+                                                        className={`flex items-center gap-1.5 text-[10px] font-extrabold px-3 py-2 rounded-xl border transition-all ${
+                                                            aiAssistLoading
+                                                                ? 'opacity-40 cursor-wait'
+                                                                : !ruleContent.trim()
+                                                                    ? 'opacity-30 cursor-not-allowed bg-stone-105 border-stone-200 dark:bg-slate-900 dark:border-slate-800'
+                                                                    : 'bg-white dark:bg-slate-900 border-stone-300 dark:border-slate-700 hover:bg-stone-50 dark:hover:bg-slate-800 active:scale-95 text-stone-800 dark:text-slate-200'
+                                                        }`}
+                                                    >
+                                                        🪄 Viết Lại Sang Chảnh
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCallAiAssist('detect-conflict')}
+                                                        disabled={aiAssistLoading || !ruleContent.trim()}
+                                                        className={`flex items-center gap-1.5 text-[10px] font-extrabold px-3 py-2 rounded-xl border transition-all ${
+                                                            aiAssistLoading
+                                                                ? 'opacity-40 cursor-wait'
+                                                                : !ruleContent.trim()
+                                                                    ? 'opacity-30 cursor-not-allowed bg-stone-105 border-stone-200 dark:bg-slate-900 dark:border-slate-800'
+                                                                    : 'bg-red-500/10 border-red-500/30 text-red-650 dark:text-red-450 hover:bg-red-500/20 active:scale-95'
+                                                        }`}
+                                                    >
+                                                        ⚡ Kiểm Tra Mâu Thuẫn Logic
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* AI Output Result Visual Box */}
+                                            {aiAssistOutput && (
+                                                <div className="bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 text-left space-y-2.5 animate-in slide-in-from-bottom duration-300">
+                                                    <div className="flex justify-between items-center-wrap gap-2">
+                                                        <span className="text-[9.5px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-widest flex items-center gap-1">
+                                                            <Sparkles size={11} className="animate-spin" /> Bộ Ràng Buộc Sinh Bởi Trợ Lý
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setRuleContent(aiAssistOutput);
+                                                                toast.success("Đã ghi đè văn phong đề xuất vào biên dịch viên!");
+                                                            }}
+                                                            className="text-[9.5px] py-1 px-2 bg-purple-500 text-white font-extrabold rounded-lg hover:bg-purple-600 shadow-sm transition-all text-center"
                                                         >
-                                                            {/* Side Priority controllers */}
-                                                            <div className="flex flex-col items-center justify-between shrink-0 text-stone-400 border-r border-stone-300 dark:border-slate-800 pr-3 select-none">
-                                                                <span className="text-xs font-black font-mono text-mystic-accent bg-mystic-accent/5 px-2 py-0.5 rounded border border-mystic-accent/10">
-                                                                    #{parsedRule.index + 1}
+                                                            📥 Đẩy Sang Soạn Thảo
+                                                        </button>
+                                                    </div>
+                                                    <p className="text-xs leading-relaxed max-h-40 overflow-y-auto font-medium" style={{ color: styles.text }}>
+                                                        {aiAssistOutput}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {aiAssistConflictDetails && (
+                                                <div className={`p-4 rounded-xl text-left text-xs leading-relaxed border animate-in slide-in-from-bottom duration-300 ${
+                                                    aiAssistConflictDetails.includes('✅')
+                                                        ? 'bg-emerald-500/5 border-emerald-500/25 text-emerald-650 dark:text-emerald-400'
+                                                        : 'bg-rose-500/5 border-rose-500/25 text-rose-650 dark:text-rose-400'
+                                                }`}>
+                                                    <span className="font-extrabold uppercase text-[10px] tracking-wider block mb-1">Kiểm Kê Quy Chế Xung Đột</span>
+                                                    <div>{aiAssistConflictDetails}</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="pt-5 border-t border-stone-200/40 dark:border-slate-800/40 mt-5">
+                                    <button 
+                                        type="button"
+                                        onClick={handleAddRule}
+                                        disabled={!ruleContent.trim()}
+                                        className="w-full py-3 px-4 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-sm active:translate-y-[1px] disabled:opacity-40"
+                                        style={{
+                                            background: styles.accent,
+                                            color: '#ffffff'
+                                        }}
+                                    >
+                                        <Plus size={15} /> Thêm Quy Tắc Vào Hệ Thống
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Panel 2: Presets Library (5 Cols) */}
+                            <div 
+                                className={`lg:col-span-5 border border-stone-200/80 dark:border-slate-800/80 rounded-2xl p-5 md:p-6 transition-all duration-300 flex flex-col justify-start scroll-smooth ${
+                                    mobileRuleSubTab === 'presets' ? 'block' : 'hidden lg:flex'
+                                }`}
+                                style={{
+                                    background: styles.convexBg,
+                                }}
+                            >
+                                <div className="space-y-4">
+                                    <h4 style={{ color: styles.text }} className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5 text-left pl-1">
+                                        <Zap size={14} className="text-amber-500 animate-bounce" /> Thư Viện Bản Mẫu Khuyên Dùng
+                                    </h4>
+                                    <p className="text-[11px] text-left leading-relaxed mt-1" style={{ color: styles.textMuted }}>
+                                        Bộ luật đề cử giải quyết triệt để lỗi cơ cấu của AI. Bạn có thể nhấn nạp bản mẫu này vào khung soạn và chỉnh chi tiết theo bối cảnh truyện của mình.
+                                    </p>
+
+                                    {/* Scrollable Use Case Filter tags */}
+                                    <div className="flex flex-wrap gap-1 border-b border-stone-200/40 dark:border-slate-800/40 pb-2">
+                                        {PRESET_USE_CASES.map((uc) => {
+                                            const isActive = selectedPresetUseCase === uc.id;
+                                            return (
+                                                <button
+                                                    key={uc.id}
+                                                    type="button"
+                                                    onClick={() => setSelectedPresetUseCase(uc.id)}
+                                                    className={`px-2 py-1 text-[9px] font-extrabold rounded-lg border transition-all ${
+                                                        isActive
+                                                            ? 'bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-450 font-black'
+                                                            : 'bg-white dark:bg-slate-900 border-stone-200 dark:border-slate-800 text-stone-600 dark:text-slate-400 hover:bg-stone-50'
+                                                    }`}
+                                                >
+                                                    {uc.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="space-y-2.5 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                        {PRESET_RULE_TEMPLATES
+                                            .filter(preset => selectedPresetUseCase === 'ALL' || preset.useCase === selectedPresetUseCase)
+                                            .map((preset, idx) => {
+                                                const isLoadedInEditor = ruleContent === preset.content;
+                                                return (
+                                                    <div 
+                                                        key={idx}
+                                                        onClick={() => handleSelectPreset(preset)}
+                                                        className={`p-3.5 rounded-xl text-left cursor-pointer transition-all duration-200 flex justify-between items-start gap-2 group border ${
+                                                            isLoadedInEditor
+                                                                ? 'shadow-[0_4px_12px_rgba(244,114,182,0.15)] bg-pink-500/5 dark:bg-pink-500/10'
+                                                                : 'bg-stone-50/50 dark:bg-slate-900/20 border-stone-150 dark:border-slate-850 hover:bg-stone-100 dark:hover:bg-slate-800'
+                                                        }`}
+                                                        style={{
+                                                            borderColor: isLoadedInEditor ? styles.accent : 'transparent',
+                                                        }}
+                                                    >
+                                                        <div className="flex-1 space-y-1.5 min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                                <span className="text-[8px] font-black uppercase bg-stone-200 dark:bg-slate-805 text-stone-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono border border-stone-250 dark:border-slate-700/50">
+                                                                    {preset.category}
                                                                 </span>
-                                                                <div className="flex flex-col gap-1.5 py-3">
-                                                                    <button 
-                                                                        disabled={parsedRule.index === 0}
-                                                                        onClick={() => handleMoveRule(parsedRule.index, 'up')}
-                                                                        className="p-1 text-stone-500 hover:text-mystic-accent disabled:opacity-20 rounded hover:bg-stone-300 dark:hover:bg-slate-800 transition-colors"
-                                                                        title="Đưa lên trên đầu"
-                                                                    >
-                                                                        <ArrowUp size={13} />
-                                                                    </button>
-                                                                    <button 
-                                                                        disabled={parsedRule.index === dynamicRules.length - 1}
-                                                                        onClick={() => handleMoveRule(parsedRule.index, 'down')}
-                                                                        className="p-1 text-stone-500 hover:text-mystic-accent disabled:opacity-20 rounded hover:bg-stone-300 dark:hover:bg-slate-800 transition-colors"
-                                                                        title="Hạ xuống phía dưới"
-                                                                    >
-                                                                        <ArrowDown size={13} />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                            
-                                                            {/* Current Edit state indicator header */}
-                                                            {isEditing && (
-                                                                <div className="absolute top-3 right-4 flex items-center gap-1 bg-amber-500 text-stone-950 font-black text-xs uppercase tracking-widest px-2.5 py-0.5 rounded-full animate-pulse shadow-sm">
-                                                                    ⚠️ ĐANG HIỆU CHỈNH (CHƯA LƯU)
-                                                                </div>
-                                                            )}
-
-                                                            {/* Main Content Pane */}
-                                                            <div className="flex-1 min-w-0">
-                                                                {isEditing ? (
-                                                                    <div className="space-y-3 pt-2">
-                                                                        {/* Edit form */}
-                                                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
-                                                                            <input 
-                                                                                type="text"
-                                                                                value={editingTitle}
-                                                                                onChange={(e) => setEditingTitle(e.target.value)}
-                                                                                placeholder="Tên luật hệ..."
-                                                                                className="md:col-span-4 bg-stone-50 dark:bg-slate-950 border border-stone-300 dark:border-slate-800 rounded px-2.5 py-1 text-xs text-stone-850 dark:text-slate-100 focus:outline-none focus:border-mystic-accent"
-                                                                            />
-                                                                            <select 
-                                                                                value={editingCategory}
-                                                                                onChange={(e) => setEditingCategory(e.target.value)}
-                                                                                className="md:col-span-3 bg-stone-50 dark:bg-slate-950 border border-stone-300 dark:border-slate-800 rounded px-2.5 py-1 text-xs text-stone-850 dark:text-slate-100"
-                                                                            >
-                                                                                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                                                            </select>
-                                                                            <select 
-                                                                                value={editingPriority}
-                                                                                onChange={(e) => setEditingPriority(e.target.value)}
-                                                                                className="md:col-span-2 bg-stone-50 dark:bg-slate-950 border border-stone-300 dark:border-slate-800 rounded px-2.5 py-1 text-xs text-stone-850 dark:text-slate-100"
-                                                                            >
-                                                                                {PRIORITIES.map(pr => <option key={pr} value={pr}>{pr}</option>)}
-                                                                            </select>
-                                                                            <div className="md:col-span-3 space-y-1">
-                                                                                <input 
-                                                                                    type="text"
-                                                                                    value={editingCondition}
-                                                                                    onChange={(e) => setEditingCondition(e.target.value)}
-                                                                                    placeholder="ĐK kích hoạt (ví dụ: turn > 5)"
-                                                                                    className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-300 dark:border-slate-850 rounded px-2 py-1 text-xs text-stone-850 dark:text-slate-100 focus:outline-none focus:border-mystic-accent font-mono"
-                                                                                />
-                                                                            </div>
-                                                                        </div>
-                                                                        <textarea
-                                                                            value={editingContent}
-                                                                            onChange={(e) => setEditingContent(e.target.value)}
-                                                                            className="w-full bg-stone-50 dark:bg-slate-950 border border-stone-300 dark:border-slate-850 rounded-lg p-3 text-xs text-stone-850 dark:text-slate-100 focus:outline-none focus:border-mystic-accent resize-none h-[80px]"
-                                                                            rows={3}
-                                                                        />
-                                                                        <div className="flex justify-between items-center text-xs">
-                                                                            <div className="text-xs text-stone-500 font-bold uppercase tracking-wider">
-                                                                                Bấm "Hủy" hoặc "Lưu" để đóng phiên biên tập
-                                                                            </div>
-                                                                            <div className="flex gap-2">
-                                                                                <button 
-                                                                                    onClick={() => setEditingIndex(null)}
-                                                                                    className="px-3 py-1 bg-stone-300 dark:bg-slate-800 hover:bg-stone-400 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-300 rounded font-bold transition-all"
-                                                                                >
-                                                                                    Hủy
-                                                                                </button>
-                                                                                <button 
-                                                                                    onClick={() => handleSaveInlineEdit(parsedRule.index)}
-                                                                                    className="px-4 py-1 bg-mystic-accent hover:bg-sky-400 text-mystic-900 rounded font-black flex items-center gap-1.5 transition-all shadow-sm"
-                                                                                >
-                                                                                    <Save size={12} /> Lưu 
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="space-y-2">
-                                                                        {/* Display Meta Tags */}
-                                                                        <div className="flex flex-wrap gap-2 items-center">
-                                                                            <span className={`text-xs font-black px-2 py-0.5 rounded border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}>
-                                                                                {parsedRule.category}
-                                                                            </span>
-                                                                            <span className={`text-xs font-black px-2 py-0.5 rounded border inline-flex items-center gap-1.5 ${prioStyle.badge}`}>
-                                                                                <span className={`w-1.5 h-1.5 rounded-full ${prioStyle.dot} shrink-0`} />
-                                                                                {parsedRule.priority}
-                                                                            </span>
-                                                                            
-                                                                            {/* Real-time trigger state tag display */}
-                                                                            {hasCond ? (
-                                                                                condEval.active ? (
-                                                                                    <span className="text-xs font-black px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 inline-flex items-center gap-1">
-                                                                                        <span>⚡ KÍCH HOẠT</span>
-                                                                                        <span className="font-mono text-[10px] opacity-80">({condEval.label})</span>
-                                                                                    </span>
-                                                                                ) : (
-                                                                                    <span className="text-xs font-black px-2 py-0.5 rounded bg-stone-300/40 dark:bg-slate-800 text-stone-500 dark:text-slate-450 border border-stone-350 dark:border-slate-800 inline-flex items-center gap-1">
-                                                                                        <span>⏳ CHỜ ĐIỀU KIỆN</span>
-                                                                                        <span className="font-mono text-[10px] opacity-80">({condEval.label})</span>
-                                                                                    </span>
-                                                                                )
-                                                                            ) : (
-                                                                                <span className="text-xs font-black px-2 py-0.5 rounded bg-sky-500/10 text-sky-500 border border-sky-500/15">
-                                                                                    🔥 LUÔN THI HÀNH
-                                                                                </span>
-                                                                            )}
-
-                                                                            <span className="font-bold text-sm text-stone-850 dark:text-slate-200">
-                                                                                {parsedRule.title}
-                                                                            </span>
-                                                                            {parsedRule.isDisabled && (
-                                                                                <span className="text-xs font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/20">
-                                                                                    ⚠️ Đang vô hiệu hóa
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
- 
-                                                                        {/* Text representation */}
-                                                                        <p className="text-xs text-stone-650 dark:text-slate-300 leading-relaxed font-normal whitespace-pre-wrap pl-0.5">
-                                                                            {parsedRule.content}
-                                                                        </p>
-                                                                    </div>
+                                                                {preset.popular && (
+                                                                    <span className="text-[8px] font-black uppercase bg-red-500 text-white px-1 py-0.5 rounded shadow-sm scale-95 origin-left">
+                                                                        ⭐ Hot
+                                                                    </span>
                                                                 )}
+                                                                <span className="font-extrabold text-xs truncate max-w-[130px]" style={{ color: styles.text }}>
+                                                                    {preset.title}
+                                                                </span>
                                                             </div>
- 
-                                                            {/* Controls sidebar */}
-                                                            {!isEditing && (
-                                                                <div className="flex items-center gap-2 border-l border-stone-300 dark:border-slate-800 pl-3 shrink-0">
-                                                                    {/* Toggle active switch */}
-                                                                    <button 
-                                                                        onClick={() => handleToggleRuleActive(parsedRule.index)}
-                                                                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${!parsedRule.isDisabled ? 'bg-mystic-accent' : 'bg-stone-350 dark:bg-slate-850'}`}
-                                                                        title={parsedRule.isDisabled ? "Bật định hạn quy tắc" : "Tạm tắt quy tắc"}
-                                                                    >
-                                                                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${!parsedRule.isDisabled ? 'translate-x-[18px]' : 'translate-x-1'}`} />
-                                                                    </button>
- 
-                                                                    {/* Edit inline pen */}
-                                                                    <button 
-                                                                        onClick={() => handleStartEditing(parsedRule)}
-                                                                        className="text-stone-500 hover:text-mystic-accent p-1.5 rounded-lg hover:bg-stone-300 dark:hover:bg-slate-800 transition-colors"
-                                                                        title="Chỉnh sửa chi tiết"
-                                                                    >
-                                                                        <Edit2 size={13} />
-                                                                    </button>
- 
-                                                                    {/* Trash */}
-                                                                    <button 
-                                                                        onClick={() => handleRemoveRule(parsedRule.index)}
-                                                                        className="text-stone-505 hover:text-red-500 p-1.5 rounded-lg hover:bg-stone-300 dark:hover:bg-slate-800 transition-colors"
-                                                                        title="Xóa quy chế này"
-                                                                    >
-                                                                        <Trash2 size={13} />
-                                                                    </button>
-                                                                </div>
-                                                            )}
+                                                            <p className="text-[10px] line-clamp-2 leading-normal" style={{ color: styles.textMuted }}>
+                                                                {preset.desc}
+                                                            </p>
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                                        <span 
+                                                            style={{ color: styles.accent }}
+                                                            className="text-[9px] font-black tracking-wider shrink-0 uppercase opacity-75 group-hover:opacity-100 transition-opacity pl-1 pt-0.5"
+                                                        >
+                                                            + Thêm
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Database Filters & Active Rules Queue */}
+                        <div className="max-w-7xl mx-auto w-full pt-4 space-y-4">
+                            
+                            {/* Glassmorphic Filter Sub-header */}
+                            <div className="bg-stone-50/40 dark:bg-slate-900/20 border border-stone-200/50 dark:border-slate-800/80 p-4 rounded-2xl flex flex-col md:flex-row gap-4 justify-between items-center text-left">
+                                <div className="w-full md:w-auto">
+                                    <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5" style={{ color: styles.text }}>
+                                        Danh Trực Hệ Ràng Buộc Đang Chạy ({filteredRules.length} / {dynamicRules.length})
+                                    </h4>
+                                    <p className="text-[10px]" style={{ color: styles.textMuted }}>
+                                        Kéo thả tự do để phân cấp độ ưu tiên, gạt công tắc để bật tắt an toàn hoặc chỉnh sửa nội dung trực hệ.
+                                    </p>
+                                </div>
+
+                                {/* Controls Row */}
+                                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                                    
+                                    {/* Query Search */}
+                                    <div className="relative flex-1 md:flex-initial">
+                                        <Search size={13} className="absolute left-3.5 top-3" style={{ color: styles.textMuted }} />
+                                        <input 
+                                            type="text"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            placeholder="Tìm luật..."
+                                            style={{
+                                                background: styles.bg,
+                                                border: styles.border,
+                                                color: styles.text
+                                            }}
+                                            className="w-full md:w-36 rounded-xl pl-8.5 pr-3 py-2 text-xs placeholder:opacity-50 focus:outline-none focus:border-stone-450 dark:focus:border-slate-705 transition-all font-bold shadow-inner"
+                                        />
+                                    </div>
+
+                                    {/* Category Select Dropdown */}
+                                    <select 
+                                        value={selectedFilterCategory}
+                                        onChange={(e) => setSelectedFilterCategory(e.target.value)}
+                                        style={{
+                                            background: styles.bg,
+                                            border: styles.border,
+                                            color: styles.text,
+                                        }}
+                                        className="rounded-xl px-2.5 py-2 text-xs font-black outline-none shadow-inner"
+                                    >
+                                        <option value="ALL">Mọi Nhóm</option>
+                                        {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-stone-200 dark:bg-slate-900">{cat}</option>)}
+                                    </select>
+
+                                    {/* Status Select Dropdown */}
+                                    <select 
+                                        value={selectedFilterStatus}
+                                        onChange={(e) => setSelectedFilterStatus(e.target.value as any)}
+                                        style={{
+                                            background: styles.bg,
+                                            border: styles.border,
+                                            color: styles.text,
+                                        }}
+                                        className="rounded-xl px-2.5 py-2 text-xs font-black outline-none shadow-inner"
+                                    >
+                                        <option value="ALL">Mọi trạng thái</option>
+                                        <option value="ACTIVE">Kích hoạt</option>
+                                        <option value="DISABLED">Đang tắt</option>
+                                    </select>
+
+                                    {dynamicRules.length > 0 && (
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                if (setDynamicRules) setDynamicRules([]);
+                                                toast.success("Đã dọn dẹp sạch toàn bộ các luật vận hành!");
+                                            }}
+                                            className="text-red-500 font-extrabold flex items-center gap-1.5 px-3 py-2 text-xs border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 active:scale-95 rounded-xl transition-all"
+                                        >
+                                            <Trash2 size={12} /> Xóa Hết
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Rules Card Render - Dynamic Flex List */}
+                            {filteredRules.length === 0 ? (
+                                <div 
+                                    className="p-10 text-center space-y-3.5 max-w-7xl mx-auto w-full border border-stone-200/50 dark:border-slate-800/80 rounded-2xl"
+                                    style={{ background: styles.convexBg }}
+                                >
+                                    <AlertTriangle size={32} style={{ color: styles.accent }} className="mx-auto" />
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-wider" style={{ color: styles.text }}>
+                                            Không tìm thấy điều quy nào khả dụng
+                                        </p>
+                                        <p className="text-[11px] max-w-xs mx-auto leading-relaxed mt-1" style={{ color: styles.textMuted }}>
+                                            Hãy thử khởi sinh bối cảnh mẫu ở trình ghi đè presets phía bên trên hoặc tự soạn thảo luật lệ mới của bạn.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3.5 max-w-7xl mx-auto w-full animate-in fade-in duration-300">
+                                    {filteredRules.map((parsedRule) => {
+                                        const isEditing = editingIndex === parsedRule.index;
+                                        const isSomeoneElseEditing = editingIndex !== null && !isEditing;
+                                        const catStyle = CATEGORY_STYLES[parsedRule.category] || CATEGORY_STYLES['⚙️ Khác'];
+                                        const prioStyle = PRIORITY_STYLES[parsedRule.priority] || PRIORITY_STYLES['🟡 LINH HOẠT'];
+                                        
+                                        // Real-time condition evaluation
+                                        const hasCond = parsedRule.condition && parsedRule.condition.trim() !== '';
+                                        const condEval = hasCond ? evaluateRuleConditionClient(parsedRule.condition) : { active: true, label: 'Luôn áp dụng' };
+
+                                        return (
+                                            <div 
+                                                key={parsedRule.index}
+                                                style={{
+                                                    background: isEditing 
+                                                        ? styles.bg 
+                                                        : parsedRule.isDisabled 
+                                                            ? 'rgba(128,128,128,0.05)' 
+                                                            : styles.convexBg,
+                                                    borderColor: isEditing 
+                                                        ? styles.accent 
+                                                        : parsedRule.isDisabled 
+                                                            ? 'transparent' 
+                                                            : 'rgba(255, 255, 255, 0.05)',
+                                                    opacity: parsedRule.isDisabled ? 0.75 : 1,
+                                                }}
+                                                className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col md:flex-row gap-4 relative md:items-start group text-left shadow-sm ${
+                                                    isEditing ? 'shadow-md scale-[1.005]' : 'hover:shadow-md'
+                                                } ${isSomeoneElseEditing ? 'opacity-30 pointer-events-none' : ''}`}
+                                            >
+                                                {/* Left Side: Priority indicators & Up/Down arrows */}
+                                                <div className="flex md:flex-col items-center justify-between shrink-0 md:border-r border-stone-200/40 dark:border-slate-800/40 pr-0 md:pr-4 gap-3 select-none">
+                                                    <span 
+                                                        style={{
+                                                            background: styles.bg,
+                                                            color: styles.accent,
+                                                            borderColor: 'rgba(255,255,255,0.05)'
+                                                        }}
+                                                        className="text-xs font-black font-mono px-3 py-1 border rounded-lg shadow-inner"
+                                                    >
+                                                        #{parsedRule.index + 1}
+                                                    </span>
+                                                    <div className="flex flex-row md:flex-col gap-1">
+                                                        <button 
+                                                            type="button"
+                                                            disabled={parsedRule.index === 0}
+                                                            onClick={() => handleMoveRule(parsedRule.index, 'up')}
+                                                            className="p-1 px-1.5 rounded-lg bg-stone-200/50 dark:bg-slate-800 hover:bg-stone-300 disabled:opacity-20 transition-all text-stone-500"
+                                                            title="Đẩy ưu tiên lên đầu"
+                                                        >
+                                                            <ArrowUp size={11} />
+                                                        </button>
+                                                        <button 
+                                                            type="button"
+                                                            disabled={parsedRule.index === dynamicRules.length - 1}
+                                                            onClick={() => handleMoveRule(parsedRule.index, 'down')}
+                                                            className="p-1 px-1.5 rounded-lg bg-stone-200/50 dark:bg-slate-800 hover:bg-stone-300 disabled:opacity-20 transition-all text-stone-500"
+                                                            title="Hạ ưu tiên xuống dưới"
+                                                        >
+                                                            <ArrowDown size={11} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Card Editing Banner */}
+                                                {isEditing && (
+                                                    <div 
+                                                        style={{ background: styles.accent }}
+                                                        className="absolute top-3 right-4 flex items-center gap-1 font-black text-[8px] md:text-[9px] text-white uppercase tracking-widest px-2.5 py-1 rounded-full animate-pulse shadow-sm z-10"
+                                                    >
+                                                        ⚠️ ĐANG SỬA ĐỔI (CHƯA LƯU)
+                                                    </div>
+                                                )}
+
+                                                {/* Main Content Side */}
+                                                <div className="flex-1 min-w-0">
+                                                    {isEditing ? (
+                                                        <div className="space-y-4 pt-2 animate-in fade-in duration-200">
+                                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+                                                                {/* Edit Title */}
+                                                                <div className="md:col-span-4">
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={editingTitle}
+                                                                        onChange={(e) => setEditingTitle(e.target.value)}
+                                                                        placeholder="Tiêu đề..."
+                                                                        style={{
+                                                                            background: styles.bg,
+                                                                            border: styles.border,
+                                                                            color: styles.text
+                                                                        }}
+                                                                        className="w-full px-3 py-2 text-xs rounded-xl outline-none font-bold"
+                                                                    />
+                                                                </div>
+
+                                                                {/* Edit Category select */}
+                                                                <div className="md:col-span-3">
+                                                                    <select 
+                                                                        value={editingCategory}
+                                                                        onChange={(e) => setEditingCategory(e.target.value)}
+                                                                        style={{
+                                                                            background: styles.bg,
+                                                                            border: styles.border,
+                                                                            color: styles.text,
+                                                                        }}
+                                                                        className="w-full px-2 py-2 text-xs font-black outline-none rounded-xl"
+                                                                    >
+                                                                        {CATEGORIES.map(cat => <option key={cat} value={cat} className="bg-stone-200 dark:bg-slate-900">{cat}</option>)}
+                                                                    </select>
+                                                                </div>
+
+                                                                {/* Edit Priority select */}
+                                                                <div className="md:col-span-2">
+                                                                    <select 
+                                                                        value={editingPriority}
+                                                                        onChange={(e) => setEditingPriority(e.target.value)}
+                                                                        style={{
+                                                                            background: styles.bg,
+                                                                            border: styles.border,
+                                                                            color: styles.text,
+                                                                        }}
+                                                                        className="w-full px-2 py-2 text-xs font-black outline-none rounded-xl"
+                                                                    >
+                                                                        {PRIORITIES.map(pr => <option key={pr} value={pr} className="bg-stone-200 dark:bg-slate-900">{pr}</option>)}
+                                                                    </select>
+                                                                </div>
+
+                                                                {/* Edit Trigger Condition */}
+                                                                <div className="md:col-span-3">
+                                                                    <input 
+                                                                        type="text"
+                                                                        value={editingCondition}
+                                                                        onChange={(e) => setEditingCondition(e.target.value)}
+                                                                        placeholder="ĐK kích hoạt (turn > 5)"
+                                                                        style={{
+                                                                            background: styles.bg,
+                                                                            border: styles.border,
+                                                                            color: styles.text
+                                                                        }}
+                                                                        className="w-full px-3 py-2 text-xs rounded-xl font-mono outline-none"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <textarea
+                                                                value={editingContent}
+                                                                onChange={(e) => setEditingContent(e.target.value)}
+                                                                placeholder="Mô tả chỉ kịch..."
+                                                                style={{
+                                                                    background: styles.bg,
+                                                                    border: styles.border,
+                                                                    color: styles.text
+                                                                }}
+                                                                className="w-full px-4 py-3 text-xs rounded-xl h-20 outline-none resize-none font-bold"
+                                                            />
+                                                            <div className="flex justify-between items-center text-[10px] pt-1">
+                                                                <div className="opacity-70 leading-normal" style={{ color: styles.text }}>
+                                                                    * Lưu ý: Mọi chỉnh đổi sẽ đồng bộ trực hệ tới lõi Tawa ngay.
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => setEditingIndex(null)}
+                                                                        className="px-3.5 py-1.5 text-[10px] font-black tracking-wide bg-stone-300 dark:bg-slate-805 text-stone-750 dark:text-slate-300 rounded-lg hover:shadow-inner"
+                                                                    >
+                                                                        Hủy
+                                                                    </button>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            handleSaveInlineEdit(parsedRule.index);
+                                                                            toast.success("Đã hiệu đính thành công kịch bản luật!");
+                                                                        }}
+                                                                        className="px-3.5 py-1.5 text-[10px] font-black tracking-wide bg-emerald-500 text-white rounded-lg flex items-center gap-1 active:scale-95 transition-all shadow-sm"
+                                                                    >
+                                                                        <Save size={11} /> Lưu Lại
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-2.5">
+                                                            {/* Display Meta Tags & Badges */}
+                                                            <div className="flex flex-wrap gap-2 items-center">
+                                                                <span 
+                                                                    className={`text-[9px] tracking-wider font-extrabold px-2.5 py-1 rounded-lg border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
+                                                                >
+                                                                    {parsedRule.category}
+                                                                </span>
+                                                                <span 
+                                                                    className={`text-[9px] tracking-wider font-extrabold px-2.5 py-1 rounded-lg border inline-flex items-center gap-1 ${prioStyle.badge}`}
+                                                                >
+                                                                    <span className={`w-1 h-1 rounded-full ${prioStyle.dot}`} />
+                                                                    {parsedRule.priority}
+                                                                </span>
+                                                                
+                                                                {/* Real-time trigger evaluation states */}
+                                                                {hasCond ? (
+                                                                    condEval.active ? (
+                                                                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/10 font-mono flex items-center gap-1 animate-pulse">
+                                                                            ⚡ KÍCH HOẠT ({condEval.label})
+                                                                        </span>
+                                                                    ) : (
+                                                                       <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-lg bg-stone-150 dark:bg-slate-805 text-stone-500 border border-transparent font-mono">
+                                                                            ⏳ CHỜ ĐIỀU KIỆN
+                                                                       </span>
+                                                                    )
+                                                                ) : (
+                                                                    <span className="text-[9.5px] font-extrabold px-2 py-0.5 rounded-lg bg-indigo-500/5 text-purple-600 dark:text-purple-400 font-mono">
+                                                                        🔥 LUÔN THI HÀNH
+                                                                    </span>
+                                                                )}
+
+                                                                {parsedRule.scope && parsedRule.scope !== 'global' && (
+                                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/5 text-blue-500 border border-blue-500/10 uppercase">
+                                                                        📍 {parsedRule.scope === 'chapter' ? 'Chương' : 'Cảnh'}
+                                                                    </span>
+                                                                )}
+
+                                                                <h5 className="font-extrabold text-xs ml-1.5" style={{ color: styles.text }}>
+                                                                    {parsedRule.title}
+                                                                </h5>
+
+                                                                {parsedRule.isDisabled && (
+                                                                    <span className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded-lg border border-amber-500/10">
+                                                                        ⚠️ Đang vô hiệu hóa
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                      
+                                                            {/* Content representation */}
+                                                            <p className="text-[11.5px] leading-relaxed font-semibold whitespace-pre-wrap pl-1 tracking-wide" style={{ color: styles.textMuted }}>
+                                                                {parsedRule.content}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                      
+                                                {/* Right Side Controls sidebar */}
+                                                {!isEditing && (
+                                                    <div className="flex md:flex-col items-center gap-3 md:border-l border-stone-200/40 dark:border-slate-800/40 pl-0 md:pl-4 justify-between md:justify-center shrink-0">
+                                                        {/* Toggle active switch button */}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleToggleRuleActive(parsedRule.index);
+                                                                toast.success(parsedRule.isDisabled ? "Đã ghim điều quy hành trở lại!" : "Tam thời ngưng áp quy này!");
+                                                            }}
+                                                            style={{
+                                                                background: !parsedRule.isDisabled ? styles.accent : 'rgba(128,128,128,0.2)',
+                                                                transition: 'all 0.2s ease'
+                                                            }}
+                                                            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none border-none cursor-pointer"
+                                                            title={parsedRule.isDisabled ? "Kích hoạt điều kiện bảo vật" : "Tạm ngưng quy chế"}
+                                                        >
+                                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-all shadow-sm ${!parsedRule.isDisabled ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+                                                        </button>
+                      
+                                                        {/* Quick Pen Edit inside list */}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => handleStartEditing(parsedRule)}
+                                                            className="p-2 rounded-xl bg-stone-200/60 hover:bg-stone-250 dark:bg-slate-800 text-stone-600 dark:text-slate-350 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
+                                                            title="Sửa nhanh inline"
+                                                        >
+                                                            <Edit2 size={12} />
+                                                        </button>
+                      
+                                                        {/* Core removal action button */}
+                                                        <button 
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleRemoveRule(parsedRule.index);
+                                                                toast.success("Đã xóa vĩnh quy chế này!");
+                                                            }}
+                                                            className="p-2 rounded-xl bg-red-500/10 text-red-550 dark:text-red-400 hover:bg-red-500/15 hover:scale-105 active:scale-95 transition-all border-none cursor-pointer"
+                                                            title="Xóa vĩnh viễn"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
+                        </div>
+                    </div>
+                )}
 
                             {/* TAB 2: IN-DEPTH CONTEXT COMPONENT (RAG TOGGLES) */}
                             {activeContextTab === 'config' && (

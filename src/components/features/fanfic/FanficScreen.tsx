@@ -27,6 +27,101 @@ const PRESET_IPS = [
   { name: "Marvel Cinematic Universe", desc: "Thế giới siêu anh hùng, thực tại đa vũ trụ và những viên đá vô cực." }
 ];
 
+const getPresetPlayerForIP = (ipName: string): Partial<PlayerProfile> => {
+  const norm = (ipName || "").toLowerCase();
+  if (norm.includes("harry potter")) {
+    return {
+      name: "Edward Evans",
+      gender: "Nam",
+      age: "11",
+      personality: "Hiếu kỳ, quả cảm, thông minh và có xu hướng hướng nội.",
+      background: "Một phù thủy gốc Muggle mới nhận được thư nhập học Hogwarts từ con cú tuyết.",
+      appearance: "Áo choàng đen Hogwarts, tóc màu nâu nhạt hạt dẻ, tay cầm đũa phép gỗ sồi gai.",
+      voiceAndTone: "Lịch sự, tự tin, hiếu học.",
+      skills: "Có tài về môn Độc dược và Ma thuật Phòng chống Nghệ thuật Hắc ám.",
+      goal: "Học hỏi vạn tượng tri thức Hogwarts, trở thành Đại Phù Thủy thám hiểm vũ trụ ma thuật."
+    };
+  }
+  if (norm.includes("naruto")) {
+    return {
+      name: "Takahara Ken",
+      gender: "Nam",
+      age: "12",
+      personality: "Nhiệt huyết, kiên trì, hào sảng và trân trọng tình bạn.",
+      background: "Học viên mới tốt nghiệp học viện Ninja làng Lá (Konohagakure).",
+      appearance: "Băng bảo vệ trán Làng Lá, quần áo ninja gọn gàng màu lam xám, tay quấn băng vải trắng.",
+      voiceAndTone: "Mạnh mẽ, ấm áp, thẳng thắn.",
+      skills: "Sử dụng Phi tiêu kunai nhuần nhuyễn, chakra thuộc tính Phong và nhẫn thuật phân thân hoàn hảo.",
+      goal: "Bảo vệ gia đình, rèn luyện nhẫn đạo độc tôn, trở thành một Jounin vĩ đại."
+    };
+  }
+  if (norm.includes("đấu phá") || norm.includes("đấu khí")) {
+    return {
+      name: "Tiêu Vũ",
+      gender: "Nam",
+      age: "16",
+      personality: "Ý chí kiên định, bình tĩnh trước nghịch cảnh, thấu hiểu nhân tình thế thái.",
+      background: "Một đệ tử chi hệ của Tiêu Gia, bắt đầu con đường ngưng tụ Đấu Khí đan điền.",
+      appearance: "Y phục gọn gàng màu xám xanh, vóc dáng cân đối săn chắc, ánh mắt sắc sảo.",
+      voiceAndTone: "Khiêm tốn nhưng đanh thép, quả quyết.",
+      skills: "Bộ pháp linh hoạt, Đấu khí thuộc tính Hỏa dồi dào, có thiên phú thấu lĩnh hỏa hồn.",
+      goal: "Tìm kiếm Dị Hỏa càn khôn, đột phá ngưng tụ Đấu Giả, bước lên đỉnh phong của Đấu Khí Đại Lục."
+    };
+  }
+  if (norm.includes("genshin")) {
+    return {
+      name: "Avery",
+      gender: "Nam",
+      age: "18",
+      personality: "Yêu thích thám hiểm, hòa đồng, nhạy cảm với các nguyên tố thế giới.",
+      background: "Một mạo hiểm giả đến từ tổ chức Hiệp Hội Mạo Hiểm Giả Mondstadt.",
+      appearance: "Trang phục dã ngoại phong cách gió tự do, sau lưng đeo một thanh kiếm rèn rỉ sét cổ, mang huy hiệu Mondstadt.",
+      voiceAndTone: "Cởi mở, hài hước, luôn tràn trề hứng thú phiêu lưu.",
+      skills: "Kiếm thuật một tay linh hoạt, khả năng tương tác với nguyên tố Phong của Phong Thần.",
+      goal: "Đi qua khắp bảy quốc gia Teyvat, ghi chép mọi bối cảnh và thăng tiến cấp bậc mạo hiểm giả."
+    };
+  }
+  if (norm.includes("marvel")) {
+    return {
+      name: "Luke Stark",
+      gender: "Nam",
+      age: "19",
+      personality: "Hơi ngạo nghễ, đam mê công nghệ, tư duy logic của nhà phát minh khoa học.",
+      background: "Một kỹ sư trẻ xuất sắc thực tập tại tập đoàn Stark Industries, mang siêu trí tuệ bẩm sinh.",
+      appearance: "Kính thông minh hologram, áo khoác thể thao trẻ trung, tay đeo vòng điều khiển robot mini tự chế.",
+      voiceAndTone: "Hơi dí dỏm châm biếm, tốc độ nói nhanh và trực quan đại khái.",
+      skills: "Lập trình AI siêu việt, thiết kế cơ khí chính xác, am hiểu vật lý lượng tử.",
+      goal: "Chế tạo bộ giáp cá nhân tối tân bảo vệ hòa bình trái đất chống lại các hiểm họa đa vũ trụ."
+    };
+  }
+  if (norm.includes("tây du")) {
+    return {
+      name: "Ngộ Không Đệ Tử",
+      gender: "Nam",
+      age: "24",
+      personality: "Ngộ đạo chính nghĩa, bất khuất, căm ghét tà ma yêu quái.",
+      background: "Một tiểu hành giả học đạo tu luyện từ Linh Đài Phương Thốn Sơn của Bồ Đề Tổ Sư.",
+      appearance: "Đeo vòng kim cô gỗ giản dị, khoác áo nâu sồng, tay cầm một thanh trượng gỗ bách phong trần.",
+      voiceAndTone: "Cung kính lễ phép nhưng đầy hào kiệt khí phách.",
+      skills: "Địa sát thuật biến hóa cơ bản, nhãn lực nhìn thấu chướng khí yêu quái.",
+      goal: "Theo chân hành trình thỉnh kinh trừ ma diệt bạo, tầm đạo chân chính cứu nhân tinh."
+    };
+  }
+  
+  // Generic Fallback (NOT a Wuxia/Xianxia character!)
+  return {
+    name: "Lâm Phong",
+    gender: "Nam",
+    age: "18",
+    personality: "Kiên cường, bình tĩnh, ham học hỏi và giỏi thích ứng.",
+    background: "Một người thám hiểm xuyên du qua vô vàn kịch bản thế giới giả tưởng.",
+    appearance: "Bộ đồ du hành gọn gàng màu xám than, đeo balo đa năng, đôi mắt sáng thông tuệ.",
+    voiceAndTone: "Biết lắng nghe, ôn hòa nhưng khi cần thì cực kỳ dứt khoát.",
+    skills: "Khả năng phân tích quy tắc thế giới cực nhanh, thể chất dẻo dai linh động.",
+    goal: "Khám phá mọi ngõ ngách bối cảnh của câu chuyện hiện tại và tìm ra chân lý lịch sử."
+  };
+};
+
 export const FanficScreen: React.FC<FanficScreenProps> = ({ onNavigate, onGameStart, initialData }) => {
   const store = useWorldCreationStore();
   const state = {
@@ -59,17 +154,7 @@ export const FanficScreen: React.FC<FanficScreenProps> = ({ onNavigate, onGameSt
   const [roleplayMode, setRoleplayMode] = useState<'EXISTING' | 'CUSTOM'>('EXISTING');
   const [selectedCharName, setSelectedCharName] = useState<string>('');
   
-  const [customPlayer, setCustomPlayer] = useState<Partial<PlayerProfile>>({
-    name: 'Diệp Thần',
-    gender: 'Nam',
-    age: '18',
-    personality: 'Ý chí kiên định, thích ứng nhanh, tư duy logic nhạy bén.',
-    background: 'Một người xuyên việt đến thế giới này, mang theo ký ức và mưu đồ thay đổi nghịch cảnh.',
-    appearance: 'Bạch y tuấn lãng, ánh mắt thâm trầm có thần thái phi phàm.',
-    voiceAndTone: 'Bình tĩnh, quyết đoán, nói năng gãy gọn.',
-    skills: 'Khả năng hấp thu năng lượng cực cao, nhạy cảm với quy tắc thế giới.',
-    goal: 'Đột phá gông xiềng vận mệnh, đạt đến đỉnh cao võ đạo tối thượng.'
-  });
+  const [customPlayer, setCustomPlayer] = useState<Partial<PlayerProfile>>(() => getPresetPlayerForIP(""));
 
   const [searchCharTerm, setSearchCharTerm] = useState('');
   const [bgImage, setBgImage] = useState<string | null>(null);
@@ -123,6 +208,7 @@ export const FanficScreen: React.FC<FanficScreenProps> = ({ onNavigate, onGameSt
   // Handle preset clicks
   const selectPreset = (name: string) => {
     setOriginalWorkName(name);
+    setCustomPlayer(getPresetPlayerForIP(name));
     toast.success(`Đã chọn IPpreset: ${name}`);
   };
 

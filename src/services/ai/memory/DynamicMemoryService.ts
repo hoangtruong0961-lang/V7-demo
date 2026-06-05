@@ -39,7 +39,7 @@ ${graphEdges.map(e => `- ${e.source} --(${e.relationship})--> ${e.target}: ${e.d
 
       // Assemble all sources into a prompt for the AI to analyze, find conflicts, and output a canonical ground-truth state!
       const prompt = `Bạn là Memory Consolidation Engine (MCE) - Hệ thống đồng bộ hóa ký ức bậc 4 cao cấp nhất của lõi ARK.
-Nhiệm vụ của bạn là đọc tất cả các nguồn dữ liệu bộ nhớ khác nhau (hiện đang được lưu trữ trong Vector RAG, StoryBible, và GraphRAG) dưới đây để phân tích, đối chiếu, giải quyết mọi mâu thuẫn (như thay đổi địa điểm, nhân vật bị giết nhưng vẫn được ghi âm sinh tồn, chỉ số sức mạnh mâu thuẫn...) và hợp nhất thành một BẢN ĐỒ KÝ ỨC CHUẨN HOÁ (Canonical World State).
+Nhiệm vụ của bạn là đọc tất cả các nguồn dữ liệu bộ nhớ khác nhau (hiện đang được lưu trữ trong Vector RAG, StoryBible, và GraphRAG) dưới đây để phân tích, đối chiếu, giải quyết mọi mâu thuẫn (như thay đổi địa điểm, nhân vật bị chết nhưng vẫn được ghi âm sinh tồn, chỉ số sức mạnh mâu thuẫn...) và hợp nhất thành một BẢN ĐỒ KÝ ỨC CHUẨN HOÁ (Canonical World State).
 
 Các dữ liệu nguồn ký ức:
 
@@ -64,7 +64,7 @@ Yêu cầu đầu ra:
    - TRẠNG THÁI HIỆN TẠI CỦA THẾ GIỚI & NHÂN VẬT CHÍNH (Vị trí hiện tại, đồng hành, mục tiêu hành động).
    - MẠNG QUAN HỆ & THÀNH TỰU (Ai còn sống, ai đã chết, quan hệ thù địch hay đồng minh).
 3. Hợp nhất ngắn gọn, đanh thép, dung lượng tối đa 400 từ để nạp bối cảnh cực nhạy.
-4. Ngôn ngữ: Tiếng Việt. Chỉ trả về bản ký ức canonic, không thêm lời chào, hướng dẫn hay markdown rườm rã ngoài nội dung chính.`;
+4. Ngôn ngữ: Tiếng Việt. Chỉ trả về bản ký ức canonic, không thêm lời chào, hướng dẫn hay markdown rườm rà ngoài nội dung chính.`;
 
       const response = await aiClient.models.generateContent({
         model: settings.aiModel || "gemini-3.1-pro-preview",
@@ -238,8 +238,38 @@ Chỉ trả về phần chữ tóm tắt, không thêm lời bình hay mô tả 
         .map(m => `[${m.role === 'user' ? 'Người chơi' : 'Hệ thống'}]: ${m.text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "").trim()}`)
         .join("\n\n");
 
+      // Dynamic sorting of characters by occurrence counts in recent text (expanding coverage to 5 most active NPCs)
+      const recentTextForScoring = recentHistory.map((m) => m.text).join(" ").toLowerCase();
+      const sortedEntities = [...(worldData.entities || [])]
+        .filter(e => e.type === 'NPC')
+        .sort((a, b) => {
+          let countA = 0;
+          let countB = 0;
+          try {
+            const escapedA = a.name.toLowerCase().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const escapedB = b.name.toLowerCase().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            countA = (recentTextForScoring.match(new RegExp(escapedA, "g")) || []).length;
+            countB = (recentTextForScoring.match(new RegExp(escapedB, "g")) || []).length;
+          } catch (_) {}
+          return countB - countA;
+        });
+
+      // Select active characters or fall back to first few
+      const activeEntities = sortedEntities.filter(e => {
+        try {
+          const escaped = e.name.toLowerCase().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+          return (recentTextForScoring.match(new RegExp(escaped, "g")) || []).length > 0;
+        } catch (_) {
+          return false;
+        }
+      });
+
+      const entitiesToCheck = activeEntities.length > 0 
+        ? activeEntities.slice(0, 5) 
+        : sortedEntities.slice(0, 3);
+
       // Extract Persona context
-      const entitiesContext = worldData.entities.slice(0, 3).map(e => `Nhân vật: ${e.name}\nTính cách/Đặc điểm: ${e.personality || e.description}`).join("\n\n");
+      const entitiesContext = entitiesToCheck.map(e => `Nhân vật: ${e.name}\nTính cách/Đặc điểm: ${e.personality || e.description}`).join("\n\n");
 
       const prompt = `Bạn là Persona Consistency Checker.
 Hãy so sánh những hành động/lời thoại của các nhân vật chính trong lịch sử gần đây với hồ sơ tính cách (Persona) gốc rễ của họ.
@@ -297,6 +327,52 @@ Chỉ trả về JSON hợp lệ.`;
     } catch (e) {
       console.error("[DynamicMemoryService] Persona drift check failed:", e);
       return null;
+    }
+  },
+
+  /**
+   * Exponential backoff retry handler for resilient background tasks
+   */
+  async retryTask<T>(taskName: string, fn: () => Promise<T>, retries = 2, delay = 1000): Promise<T> {
+    try {
+      return await fn();
+    } catch (err) {
+      if (retries <= 0) {
+        console.error(`[DynamicMemoryService] Task "${taskName}" failed after all retries. Logging failure flags for future healing.`);
+        try {
+          const queueKey = "ark_failed_memory_tasks";
+          const currentQueue = JSON.parse(localStorage.getItem(queueKey) || "[]");
+          currentQueue.push({ taskName, timestamp: Date.now() });
+          if (currentQueue.length > 20) {
+            currentQueue.shift();
+          }
+          localStorage.setItem(queueKey, JSON.stringify(currentQueue));
+        } catch (_) {}
+        throw err;
+      }
+      console.warn(`[DynamicMemoryService] Task "${taskName}" failed: ${err instanceof Error ? err.message : String(err)}. Retrying in ${delay}ms... (Remaining retries: ${retries})`);
+      await new Promise(r => setTimeout(r, delay));
+      return this.retryTask(taskName, fn, retries - 1, delay * 2);
+    }
+  },
+
+  /**
+   * Analyzes state health and optionally runs a healing MCE cycle if background steps had failed
+   */
+  async runFailedTasksQueue(settings: AppSettings, campaignId: string, worldData?: WorldData): Promise<void> {
+    const queueKey = "ark_failed_memory_tasks";
+    try {
+      const queue = JSON.parse(localStorage.getItem(queueKey) || "[]");
+      if (queue.length === 0) return;
+      console.log(`[DynamicMemoryService] Found ${queue.length} failed past tasks. Triggering automated reconciliation run...`);
+      localStorage.removeItem(queueKey);
+      
+      if (settings.enableVectorMemory && worldData) {
+        console.log("[DynamicMemoryService] Self-healing consistent canonical state reconstruction via Memory Consolidation Engine.");
+        await this.consolidateAllMemoryLayers(worldData, settings, campaignId);
+      }
+    } catch (e) {
+      console.error("[DynamicMemoryService] Automated reconciliation queue failed:", e);
     }
   }
 };

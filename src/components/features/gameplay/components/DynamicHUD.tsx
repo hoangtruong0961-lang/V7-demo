@@ -27,6 +27,8 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
     const [expanded, setExpanded] = useState(false);
     const [activeTab, setActiveTab] = useState<'status' | 'inventory' | 'quests' | 'relations' | 'chronicles' | 'config'>('status');
     const [selectedItem, setSelectedItem] = useState<{name: string, quantity?: string, desc: string} | null>(null);
+    const [searchItemText, setSearchItemText] = useState('');
+    const [activeLsrBrowserTable, setActiveLsrBrowserTable] = useState<string>('2');
 
     // --- State For Custom/Toggled Widgets (With LocalStorage Persistence) ---
     const [visibleWidgets, setVisibleWidgets] = useState<string[]>(() => {
@@ -182,6 +184,14 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
         quantity: getRowValue(row, 1),
         desc: getRowValue(row, 2)
     })).filter(i => i.name);
+
+    const filteredItems = useMemo(() => {
+        if (!searchItemText.trim()) return items;
+        return items.filter(i => 
+            i.name.toLowerCase().includes(searchItemText.toLowerCase()) || 
+            (i.desc && i.desc.toLowerCase().includes(searchItemText.toLowerCase()))
+        );
+    }, [items, searchItemText]);
 
     // #7 Trang bị đang mặc: ["Vị trí", "Tên trang bị", "Hiệu ứng/Độ bền"]
     const equipment = (lsr['7'] || []).map(row => ({
@@ -882,15 +892,24 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
                                         {/* Bag square slots view & Asset Indicator (Right 7 columns) */}
                                         <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
                                             <div>
-                                                <h4 className="text-[9px] uppercase font-bold text-slate-500 tracking-widest mb-3 flex items-center gap-1.5">
-                                                    <Backpack size={12} className="text-sky-400" />
-                                                    <span>Hành Trang & Tài Vật (Bags)</span>
-                                                </h4>
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                                                    <h4 className="text-[9px] uppercase font-bold text-slate-500 tracking-widest flex items-center gap-1.5 font-mono">
+                                                        <Backpack size={12} className="text-sky-400" />
+                                                        <span>Hành Trang & Tài Vật (Bags)</span>
+                                                    </h4>
+                                                    <input 
+                                                        type="text"
+                                                        placeholder="Tìm vật phẩm..."
+                                                        value={searchItemText}
+                                                        onChange={e => setSearchItemText(e.target.value)}
+                                                        className="px-2 py-0.5 text-[10px] rounded bg-black border border-white/10 text-slate-300 outline-none w-full sm:w-36 focus:border-sky-500 transition-colors font-mono"
+                                                    />
+                                                </div>
                                                 
                                                 {/* Squares layout of items */}
                                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-[220px] overflow-y-auto no-scrollbar bg-black/25 rounded-xl border border-white/5 p-2">
-                                                    {items.length > 0 ? (
-                                                        items.map((item, i) => (
+                                                    {filteredItems.length > 0 ? (
+                                                        filteredItems.map((item, i) => (
                                                             <div 
                                                                 key={i} 
                                                                 onClick={() => setSelectedItem(item)}
@@ -1330,64 +1349,72 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
                                         {/* Dynamic Custom Regex-Table widget builder (Right 6 columns) */}
                                         <div className="md:col-span-6 space-y-4">
                                             <div>
-                                                <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-3 flex items-center gap-1.5 font-mono">
+                                                <h4 className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-2 flex items-center gap-1.5 font-mono">
                                                     <Plus size={13} className="text-emerald-400" />
                                                     <span>Chế Tạo Custom Widget</span>
                                                 </h4>
-                                                <p className="text-[11px] text-slate-400 mb-3 font-sans">Trích xuất bất kỳ mục dữ liệu nào từ hệ thống bảng LSR lưu trữ và gán chúng lên thanh Compact HUD của bạn:</p>
+                                                <p className="text-[11px] text-slate-400 mb-2.5 font-sans">Trích xuất mọi dữ liệu từ hệ thống bảng LSR gán thẳng lên thanh HUD nhỏ vô cùng trực quan:</p>
 
                                                 <div className="bg-black/40 rounded-xl border border-white/5 p-4 space-y-3.5">
                                                     
                                                     {/* Widget Label row */}
                                                     <div className="flex flex-col gap-1">
-                                                        <label className="text-[10px] uppercase font-black text-slate-400 font-mono">Tên hiển thị (Label):</label>
+                                                        <label className="text-[10px] uppercase font-black text-slate-450 font-mono">Tên hiển thị (Label):</label>
                                                         <input 
                                                             type="text"
                                                             placeholder="ví dụ: Tu vi, Linh lực, Linh Thạch..."
                                                             value={newWidgetLabel}
                                                             onChange={e => setNewWidgetLabel(e.target.value)}
-                                                            className="px-3 py-2 text-xs rounded-lg bg-black border border-white/10 text-white outline-none focus:border-emerald-500 transition-colors"
+                                                            className="px-3 py-2 text-xs rounded-lg bg-black border border-white/10 text-white outline-none focus:border-emerald-500 transition-colors font-mono"
                                                         />
                                                     </div>
 
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {/* Table Select */}
                                                         <div className="flex flex-col gap-1">
-                                                            <label className="text-[10px] uppercase font-black text-slate-400 font-mono">Nguồn Bảng LSR:</label>
+                                                            <label className="text-[10px] uppercase font-black text-slate-450 font-mono">Nguồn Bảng LSR:</label>
                                                             <select 
                                                                 value={newWidgetTable} 
                                                                 onChange={e => setNewWidgetTable(e.target.value)}
                                                                 className="px-2.5 py-1.5 text-xs rounded-lg bg-black border border-white/10 text-slate-300 outline-none font-mono"
                                                             >
-                                                                <option value="0">#0 Hiện tại (Thời gian, điểm..)</option>
-                                                                <option value="1">#1 Gần đây (NPCs)</option>
-                                                                <option value="2">#2 Bản thân (Chỉ số)</option>
+                                                                <option value="0">#0 Hiện tại / Điểm mục</option>
+                                                                <option value="1">#1 Gần đây / NPCs</option>
+                                                                <option value="2">#2 Trạng thái / Bản thân</option>
+                                                                <option value="3">#3 Quan hệ nhân vật</option>
+                                                                <option value="4">#4 Thiên mệnh / Nhiệm vụ</option>
                                                                 <option value="5">#5 Kỹ năng / Lĩnh ngộ</option>
-                                                                <option value="6">#6 Túi đồ / Vật phẩm</option>
-                                                                <option value="12">#12 Hiệu ứng (Buffs)</option>
-                                                                <option value="13">#13 Kinh tế (Tài sản)</option>
-                                                                <option value="14">#14 Bạn đồng hành</option>
+                                                                <option value="6">#6 Túi đồ / Hành lý</option>
+                                                                <option value="7">#7 Trang bị đang mặc</option>
+                                                                <option value="8">#8 Địa điểm đã biết</option>
+                                                                <option value="9">#9 Phe phái thế lực</option>
+                                                                <option value="10">#10 Biên niên sử ngoại ký</option>
+                                                                <option value="11">#11 Tin đồn đàm tiếu</option>
+                                                                <option value="12">#12 Hiệu ứng Buff/Debuff</option>
+                                                                <option value="13">#13 Kinh tế tài vật</option>
+                                                                <option value="14">#14 Thú khế nhân duyên</option>
+                                                                <option value="15">#15 Thân bản ký hành</option>
                                                             </select>
                                                         </div>
 
                                                         {/* Icon select */}
                                                         <div className="flex flex-col gap-1">
-                                                            <label className="text-[10px] uppercase font-black text-slate-400 font-mono">Icon hiển thị:</label>
+                                                            <label className="text-[10px] uppercase font-black text-slate-450 font-mono">Icon hiển thị:</label>
                                                             <select 
                                                                 value={newWidgetEmoji} 
                                                                 onChange={e => setNewWidgetEmoji(e.target.value)}
-                                                                className="px-2.5 py-1.5 text-xs rounded-lg bg-black border border-white/10 text-slate-300 outline-none"
+                                                                className="px-2.5 py-1.5 text-xs rounded-lg bg-black border border-white/10 text-slate-300 outline-none font-mono"
                                                             >
                                                                 <option value="🔮">🔮 Linh thạch / Ma pháp</option>
                                                                 <option value="⚡">⚡ Lôi điện / Đột đột</option>
-                                                                <option value="🪙">🪙 Tiêu pha / Đồng tiền</option>
-                                                                <option value="🧪">🧪 Độc bình / Dược thảo</option>
+                                                                <option value="🪙">🪙 Tiêu pha / Tài vật</option>
+                                                                <option value="🧪">🧪 Độc bình / Thảo dược</option>
                                                                 <option value="⚔️">⚔️ Đồ đao / Sức mạnh</option>
-                                                                <option value="🛡️">🛡️ Kim giáp / Độ bền</option>
-                                                                <option value="🔥">🔥 Chân hỏa / Ma lực</option>
+                                                                <option value="🛡️">🛡️ Kim giáp / Phòng thủ</option>
+                                                                <option value="🔥">🔥 Chân hỏa / Công lực</option>
                                                                 <option value="🌸">🌸 Duyên phận / Hồng trần</option>
-                                                                <option value="📜">📜 Bí thuật / Ghi chép</option>
-                                                                <option value="🐺">🐺 Thú khế / Đồng hành</option>
+                                                                <option value="📜">📜 Ghi chép / Sử thư</option>
+                                                                <option value="🐺">🐺 Đồng hành / Linh thú</option>
                                                             </select>
                                                         </div>
                                                     </div>
@@ -1395,11 +1422,11 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
                                                     <div className="grid grid-cols-2 gap-3">
                                                         {/* Row number selector */}
                                                         <div className="flex flex-col gap-1">
-                                                            <label className="text-[10px] uppercase font-black text-slate-400 font-mono">Dòng (Index từ 0):</label>
+                                                            <label className="text-[10px] uppercase font-black text-slate-450 font-mono">Dòng (Tùy chỉnh index):</label>
                                                             <input 
                                                                 type="number"
                                                                 min="0"
-                                                                max="10"
+                                                                max="20"
                                                                 value={newWidgetRow}
                                                                 onChange={e => setNewWidgetRow(parseInt(e.target.value) || 0)}
                                                                 className="px-2.5 py-1.5 text-xs rounded-lg bg-black border border-white/10 text-white outline-none font-mono"
@@ -1408,15 +1435,102 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
 
                                                         {/* Column number selector */}
                                                         <div className="flex flex-col gap-1">
-                                                            <label className="text-[10px] uppercase font-black text-slate-400 font-mono">Cột (Index từ 0):</label>
+                                                            <label className="text-[10px] uppercase font-black text-slate-450 font-mono">Cột (Tùy chỉnh index):</label>
                                                             <input 
                                                                 type="number"
                                                                 min="0"
-                                                                max="5"
+                                                                max="8"
                                                                 value={newWidgetCol}
                                                                 onChange={e => setNewWidgetCol(parseInt(e.target.value) || 0)}
                                                                 className="px-2.5 py-1.5 text-xs rounded-lg bg-black border border-white/10 text-white outline-none font-mono"
                                                             />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* --- INTERACTIVE LSR DATA VISUAL PICKER --- */}
+                                                    <div className="p-3 bg-slate-900/50 rounded-xl border border-white/10 space-y-2.5 animate-fadeIn">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[9px] uppercase font-bold text-emerald-400 font-mono">Duyệt & Chọn Nhanh Tế Bào LSR Dữ Liệu Thực :</span>
+                                                        </div>
+                                                        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1 border-b border-white/5">
+                                                            {(() => {
+                                                                const tableKeys = Object.keys(lsr);
+                                                                const tableLabels: Record<string, string> = {
+                                                                    '0': '#0 Hiện tại', '1': '#1 Gần đây', '2': '#2 Chỉ số', '3': '#3 Quan hệ',
+                                                                    '4': '#4 Nhiệm vụ', '5': '#5 Kỹ năng', '6': '#6 Túi đồ', '7': '#7 Trang bị',
+                                                                    '8': '#8 Địa danh', '9': '#9 Phe phái', '10': '#10 Sử ký', '11': '#11 Nhật ký',
+                                                                    '12': '#12 Hiệu ứng', '13': '#13 Kinh tế', '14': '#14 Linh thú', '15': '#15 Hành trình'
+                                                                };
+                                                                return tableKeys.map(key => {
+                                                                    const rows = lsr[key] || [];
+                                                                    if (rows.length === 0) return null;
+                                                                    return (
+                                                                        <button
+                                                                            key={key}
+                                                                            type="button"
+                                                                            onClick={() => setActiveLsrBrowserTable(key)}
+                                                                            className={`px-2 py-0.5 text-[8.5px] font-mono font-black rounded transition-all whitespace-nowrap ${
+                                                                                activeLsrBrowserTable === key 
+                                                                                ? 'bg-emerald-500 text-black shadow-md' 
+                                                                                : 'bg-black/40 text-slate-400 border border-white/5 hover:text-white'
+                                                                            }`}
+                                                                        >
+                                                                            {tableLabels[key] || `Bảng ${key}`} ({rows.length})
+                                                                        </button>
+                                                                    );
+                                                                });
+                                                            })()}
+                                                        </div>
+
+                                                        {/* Preview Cells Grid */}
+                                                        <div className="bg-black/60 rounded border border-white/5 max-h-[120px] overflow-y-auto custom-scrollbar p-2 space-y-2">
+                                                            {(() => {
+                                                                const activeRows = (lsr[activeLsrBrowserTable] || []) as any[];
+                                                                if (activeRows.length === 0) {
+                                                                    return <div className="text-[10px] text-slate-500 text-center font-mono">Không tìm thấy bản ghi cho nguồn này</div>;
+                                                                }
+                                                                return activeRows.map((row, rIdx) => {
+                                                                    const cellKeys = Object.keys(row).filter(k => k !== 'length');
+                                                                    return (
+                                                                        <div key={rIdx} className="space-y-1 border-b border-white/5 pb-1.5 last:border-none last:pb-0 font-mono">
+                                                                            <div className="text-[8px] text-slate-500 font-extrabold uppercase">Dọc dòng {rIdx}:</div>
+                                                                            <div className="flex flex-wrap gap-1.5">
+                                                                                {cellKeys.map((cKey, cIdx) => {
+                                                                                    const cellVal = getRowValue(row, cKey);
+                                                                                    if (!cellVal) return null;
+                                                                                    const isSelected = newWidgetTable === activeLsrBrowserTable && newWidgetRow === rIdx && newWidgetCol === Number(cKey);
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={cKey}
+                                                                                            type="button"
+                                                                                            title={`Nhấp để chọn Bảng ${activeLsrBrowserTable} - Dòng ${rIdx} - Cột ${cKey}`}
+                                                                                            onClick={() => {
+                                                                                                setNewWidgetTable(activeLsrBrowserTable);
+                                                                                                setNewWidgetRow(rIdx);
+                                                                                                setNewWidgetCol(Number(cKey));
+                                                                                                // Smart Auto Naming
+                                                                                                const firstVal = getRowValue(row, 0);
+                                                                                                if (firstVal && Number(cKey) !== 0) {
+                                                                                                    setNewWidgetLabel(firstVal);
+                                                                                                } else {
+                                                                                                    setNewWidgetLabel(cellVal.substring(0, 16));
+                                                                                                }
+                                                                                            }}
+                                                                                            className={`px-1.5 py-0.5 text-[10px] rounded transition-all max-w-[120px] truncate border text-left ${
+                                                                                                isSelected 
+                                                                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500' 
+                                                                                                : 'bg-black text-slate-350 border-white/10 hover:border-slate-500 hover:text-white'
+                                                                                            }`}
+                                                                                        >
+                                                                                            C{cIdx}: {cellVal}
+                                                                                        </button>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                });
+                                                            })()}
                                                         </div>
                                                     </div>
 
@@ -1425,7 +1539,7 @@ export const DynamicHUD: React.FC<DynamicHUDProps> = ({ worldData, gameTime, tur
                                                         className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 font-mono font-bold text-xs rounded-lg text-black hover:scale-[1.02] transition-transform active:scale-95 flex items-center justify-center gap-1.5"
                                                     >
                                                         <Plus size={14} />
-                                                        <span>CHẾ TẠO & PIN LÊN HUD</span>
+                                                        <span>GHIM LÊN COMPACT HUD</span>
                                                     </button>
                                                 </div>
                                             </div>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 
@@ -22,22 +21,29 @@ const Button: React.FC<ButtonProps> = ({
   ...props 
 }) => {
   
-  const baseStyles = "relative px-6 py-3 rounded-md font-sans font-medium transition-all duration-200 flex items-center justify-center gap-3 overflow-hidden group";
+  const baseStyles = "relative px-6 py-3 rounded-xl font-sans font-black transition-all duration-200 flex items-center justify-center gap-2.5 overflow-hidden group select-none";
   
   const variants = {
-    primary: "bg-mystic-100 dark:bg-mystic-800 border border-mystic-accent/30 text-mystic-accent hover:bg-mystic-accent/10 hover:border-mystic-accent hover:shadow-[0_0_15px_rgba(56,189,248,0.3)]",
-    ghost: "bg-transparent text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200 dark:hover:bg-white/5",
-    outline: "border border-stone-300 dark:border-slate-600 text-stone-600 dark:text-slate-300 hover:border-stone-400 hover:text-stone-900 dark:hover:text-white",
-    danger: "border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-700 dark:hover:text-red-200"
+    // Neumorphic raised primary plate with soft sky-400 theme text & hover glow
+    primary: "bg-[#0d1220] text-sky-400 border border-[#141b2c]/10 shadow-[4px_4px_8px_rgba(3,4,8,0.7),_-4px_-4px_8px_rgba(25,35,58,0.2)] hover:text-sky-300 hover:shadow-[5px_5px_12px_rgba(3,4,8,0.8),_-5px_-5px_12px_rgba(25,35,58,0.25)] active:shadow-[inset_2px_2px_5px_rgba(3,4,8,0.7),_inset_-2px_-2px_5px_rgba(25,35,58,0.15)]",
+    
+    // Ghost sunken/translucent plate
+    ghost: "bg-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-805/20 border border-transparent hover:border-[#141b2c]/10",
+    
+    // Neumorphic outline - clean raised bone outline plate
+    outline: "bg-[#0d1220] border border-[#141b2c]/20 text-slate-300 shadow-[3px_3px_6px_rgba(3,4,8,0.65),_-3.5px_-3.5px_6px_rgba(25,35,58,0.18)] hover:text-slate-100 active:shadow-inner",
+    
+    // Neumorphic danger - raised red warning plate
+    danger: "bg-[#0d1220] border border-red-500/20 text-red-400 shadow-[2px_2px_5px_rgba(3,4,8,0.75),_-2px_-2px_5px_rgba(25,35,58,0.15)] hover:text-red-301 hover:border-red-500/40 hover:shadow-[3px_3px_8px_rgba(3,4,8,0.8)] active:shadow-inner"
   };
 
-  const disabledStyles = "opacity-50 cursor-not-allowed grayscale";
+  const disabledStyles = "opacity-40 cursor-not-allowed grayscale shadow-none pointer-events-none";
 
   return (
     <motion.button
       type={props.type || "button"}
-      whileHover={!disabled ? { scale: 1.02 } : {}}
-      whileTap={!disabled ? { scale: 0.98 } : {}}
+      whileHover={!disabled ? { scale: 1.01 } : {}}
+      whileTap={!disabled ? { scale: 0.99 } : {}}
       className={`${baseStyles} ${variants[variant]} ${disabled || isLoading ? disabledStyles : ''} ${className}`}
       disabled={disabled || isLoading}
       onClick={props.onClick}
@@ -49,11 +55,11 @@ const Button: React.FC<ButtonProps> = ({
       )}
 
       {isLoading ? (
-        <span className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
+        <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
       ) : (
         <>
-          {icon && <span className="w-5 h-5">{icon}</span>}
-          <span className="tracking-wide uppercase text-sm">{children}</span>
+          {icon && <span className="w-4 h-4 flex items-center justify-center shrink-0">{icon}</span>}
+          <span className="tracking-widest uppercase text-[10px] font-bold font-mono">{children}</span>
         </>
       )}
     </motion.button>

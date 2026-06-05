@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, ChevronLeft, ChevronRight, ChevronsDown, ChevronsUp } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight, ChevronsDown, ChevronsUp, Eye, EyeOff, BookOpen, Settings } from 'lucide-react';
 import { NavigationProps, GameState } from '../../../types';
 import Button from '../../ui/Button';
 import GameInput from './components/GameInput';
@@ -14,6 +14,47 @@ const GameplayScreen: React.FC<NavigationProps> = ({ onNavigate, activeWorld, on
   const core = useGameplayCore({ onNavigate, activeWorld, onUpdateWorld });
   const [showRuleModal, setShowRuleModal] = React.useState(false);
   const MESSAGES_PER_PAGE = 10;
+
+  const lastScrollTopRef = React.useRef(0);
+  const [areBarsHidden, setAreBarsHidden] = React.useState(false);
+  const [autoHideBars, setAutoHideBars] = React.useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ark_hud_autohide_bars');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+      return window.innerWidth < 768; // Default to true on mobile devices
+    }
+    return false;
+  });
+
+  // Instantly show bars back if loading status starts (to let user see AI generation / token monitors)
+  React.useEffect(() => {
+    if (core.isLoading) {
+      setAreBarsHidden(false);
+    }
+  }, [core.isLoading]);
+
+  const customHandleScroll = () => {
+    core.handleScroll();
+
+    if (core.scrollViewportRef.current) {
+      const { scrollTop } = core.scrollViewportRef.current;
+      const delta = scrollTop - lastScrollTopRef.current;
+
+      if (autoHideBars) {
+        if (delta > 15 && scrollTop > 60) {
+          // Scrolling down, auto hide
+          setAreBarsHidden(true);
+        } else if (delta < -15) {
+          // Scrolling up, show bars
+          setAreBarsHidden(false);
+        }
+      }
+
+      lastScrollTopRef.current = scrollTop;
+    }
+  };
 
   // Auto-open sidebar on wide screens on mount
   React.useEffect(() => {
@@ -120,20 +161,31 @@ const GameplayScreen: React.FC<NavigationProps> = ({ onNavigate, activeWorld, on
   const activeChoices = (lastMessage?.role === 'model' && lastMessage.choices) ? lastMessage.choices : [];
 
   return (
-    <div className="flex h-full w-full bg-stone-300 dark:bg-[#090f1d] font-sans overflow-hidden">
+    <div className="flex h-full w-full bg-stone-300 dark:bg-[#090f1d] font-sans overflow-hidden relative">
         {/* LEFT COLUMN */}
         <div className="flex-1 flex flex-col h-full relative z-10 min-w-0">
-            <GameplayHUD 
-                activeWorld={activeWorld} 
-                turnCount={turnCount} 
-                gameTime={gameTime} 
-                setShowMobileSidebar={setShowMobileSidebar} 
-            />
+            {/* Collapsible Top Bar with bouncy dynamics */}
+            <motion.div
+                animate={{ 
+                    y: areBarsHidden ? '-100%' : 0, 
+                    height: areBarsHidden ? 0 : 'auto',
+                    opacity: areBarsHidden ? 0 : 1,
+                }}
+                transition={{ type: 'spring', damping: 24, stiffness: 180 }}
+                className="relative z-30 w-full shrink-0 overflow-hidden"
+            >
+                <GameplayHUD 
+                    activeWorld={activeWorld} 
+                    turnCount={turnCount} 
+                    gameTime={gameTime} 
+                    setShowMobileSidebar={setShowMobileSidebar} 
+                />
+            </motion.div>
 
             <GameplayChatArea
                 scrollViewportRef={scrollViewportRef}
                 chatEndRef={chatEndRef}
-                handleScroll={handleScroll}
+                handleScroll={customHandleScroll}
                 displayedMessages={displayedMessages}
                 startIndex={startIndex}
                 history={history}
@@ -150,82 +202,159 @@ const GameplayScreen: React.FC<NavigationProps> = ({ onNavigate, activeWorld, on
                 isTavernHelperReady={isTavernHelperReady}
             />
 
-            {/* Input Area ... (Same as before) */}
-            <div className="bg-stone-300 dark:bg-[#090f1d] border-t border-stone-400/20 dark:border-slate-800/10 z-20 shrink-0 flex flex-col shadow-[0_-5px_15px_rgba(0,0,0,0.04)] dark:shadow-[0_-5px_15px_rgba(0,0,0,0.25)]">
-                {/* Game Input Component */}
-                <GameInput 
-                    ref={gameInputRef}
-                    onSend={handleSend}
-                    isLoading={isLoading}
-                    lastAction={lastAction}
-                    isInputCollapsed={isInputCollapsed}
-                    onToggleCollapse={() => setIsInputCollapsed(!isInputCollapsed)}
-                    activeChoices={activeChoices}
-                    history={history}
-                    isMobile={isMobile}
-                >
-                    {/* Thử Lại Button */}
-                    <button 
-                        onClick={() => {
-                            const lastModelIdx = [...history].reverse().findIndex(m => m.role === 'model');
-                            if (lastModelIdx !== -1) {
-                                const actualIdx = history.length - 1 - lastModelIdx;
-                                handleRegenerate(actualIdx);
-                            }
-                        }} 
-                        disabled={isLoading || !history.some(m => m.role === 'model')} 
-                        className="h-9 md:h-10 px-4 text-[10px] font-black uppercase tracking-widest neu-btn rounded-xl text-stone-700 dark:text-slate-300 hover:text-mystic-accent transition-all whitespace-nowrap flex items-center justify-center gap-1.5 shrink-0 border-none disabled:opacity-40"
-                        title="Tạo lại phản hồi cuối cùng của AI"
+            {/* Collapsible Bottom Bar with bouncy dynamics */}
+            <motion.div
+                animate={{ 
+                    y: areBarsHidden ? '100%' : 0, 
+                    height: areBarsHidden ? 0 : 'auto',
+                    opacity: areBarsHidden ? 0 : 1,
+                }}
+                transition={{ type: 'spring', damping: 24, stiffness: 180 }}
+                className="z-20 w-full shrink-0 overflow-hidden"
+            >
+                <div className="bg-stone-300 dark:bg-[#090f1d] border-t border-stone-400/20 dark:border-slate-800/10 flex flex-col shadow-[0_-5px_15px_rgba(0,0,0,0.04)] dark:shadow-[0_-5px_15px_rgba(0,0,0,0.25)]">
+                    {/* Game Input Component */}
+                    <GameInput 
+                        ref={gameInputRef}
+                        onSend={handleSend}
+                        isLoading={isLoading}
+                        lastAction={lastAction}
+                        isInputCollapsed={isInputCollapsed}
+                        onToggleCollapse={() => setIsInputCollapsed(!isInputCollapsed)}
+                        activeChoices={activeChoices}
+                        history={history}
+                        isMobile={isMobile}
                     >
-                        <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
-                        <span className="hidden sm:inline">Thử Lại</span>
-                    </button>
-
-                    {/* Pagination Group */}
-                    <div className="flex items-center h-9 md:h-10 neu-sm-flat rounded-xl overflow-hidden shrink-0 border-none">
+                        {/* Thử Lại Button */}
                         <button 
-                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            disabled={currentPage === 1}
-                            className="h-full px-3 text-stone-600 dark:text-slate-400 hover:text-mystic-accent disabled:opacity-30 transition-colors border-r border-stone-400/20 dark:border-slate-700/20"
-                            title="Trang trước"
+                            onClick={() => {
+                                const lastModelIdx = [...history].reverse().findIndex(m => m.role === 'model');
+                                if (lastModelIdx !== -1) {
+                                    const actualIdx = history.length - 1 - lastModelIdx;
+                                    handleRegenerate(actualIdx);
+                                }
+                            }} 
+                            disabled={isLoading || !history.some(m => m.role === 'model')} 
+                            className="h-9 md:h-10 px-4 text-[10px] font-black uppercase tracking-widest neu-btn rounded-xl text-stone-700 dark:text-slate-300 hover:text-mystic-accent transition-all whitespace-nowrap flex items-center justify-center gap-1.5 shrink-0 border-none disabled:opacity-40"
+                            title="Tạo lại phản hồi cuối cùng của AI"
                         >
-                            <ChevronLeft size={14} />
+                            <RefreshCw size={12} className={isLoading ? "animate-spin" : ""} />
+                            <span className="hidden sm:inline">Thử Lại</span>
                         </button>
-                        <div className="px-3 flex flex-col items-center justify-center min-w-[50px]">
-                            <span className="text-[10px] font-bold text-stone-700 dark:text-slate-300 leading-none">
-                                {currentPage}/{totalPages}
-                            </span>
-                            <span className="text-[7px] uppercase opacity-50 font-bold tracking-widest mt-0.5">Trang</span>
+
+                        {/* Pagination Group */}
+                        <div className="flex items-center h-9 md:h-10 neu-sm-flat rounded-xl overflow-hidden shrink-0 border-none">
+                            <button 
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                disabled={currentPage === 1}
+                                className="h-full px-3 text-stone-600 dark:text-slate-400 hover:text-mystic-accent disabled:opacity-30 transition-colors border-r border-stone-400/20 dark:border-slate-700/20"
+                                title="Trang trước"
+                            >
+                                <ChevronLeft size={14} />
+                            </button>
+                            <div className="px-3 flex flex-col items-center justify-center min-w-[50px]">
+                                <span className="text-[10px] font-bold text-stone-700 dark:text-slate-300 leading-none">
+                                    {currentPage}/{totalPages}
+                                </span>
+                                <span className="text-[7px] uppercase opacity-50 font-bold tracking-widest mt-0.5">Trang</span>
+                            </div>
+                            <button 
+                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                disabled={currentPage === totalPages}
+                                className="h-full px-3 text-stone-600 dark:text-slate-400 hover:text-mystic-accent disabled:opacity-30 transition-colors border-l border-stone-400/20 dark:border-slate-700/20"
+                                title="Trang sau"
+                            >
+                                <ChevronRight size={14} />
+                            </button>
                         </div>
-                        <button 
-                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            disabled={currentPage === totalPages}
-                            className="h-full px-3 text-stone-600 dark:text-slate-400 hover:text-mystic-accent disabled:opacity-30 transition-colors border-l border-stone-400/20 dark:border-slate-700/20"
-                            title="Trang sau"
-                        >
-                            <ChevronRight size={14} />
-                        </button>
-                    </div>
 
-                    {/* Scroll Controls */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                        <button 
-                            onClick={scrollToTop}
-                            className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl neu-btn border-none text-stone-600 dark:text-slate-300 hover:text-mystic-accent transition-all shadow-sm"
-                            title="Lên đầu lượt"
+                        {/* Scroll Controls */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <button 
+                                onClick={scrollToTop}
+                                className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl neu-btn border-none text-stone-600 dark:text-slate-300 hover:text-mystic-accent transition-all shadow-sm"
+                                title="Lên đầu lượt"
+                            >
+                                <ChevronsUp size={16} />
+                            </button>
+                            <button 
+                                onClick={scrollToBottom}
+                                className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl neu-btn border-none text-stone-600 dark:text-slate-300 hover:text-mystic-accent transition-all shadow-sm"
+                                title="Về cuối lượt"
+                            >
+                                <ChevronsDown size={16} />
+                            </button>
+                        </div>
+
+                        {/* Dynamic Hiding Controls */}
+                        <div className="flex items-center gap-1.5 shrink-0 border-l border-stone-400/25 dark:border-slate-850/25 pl-1.5 ml-1">
+                            <button 
+                                onClick={() => {
+                                    const newval = !autoHideBars;
+                                    setAutoHideBars(newval);
+                                    localStorage.setItem('ark_hud_autohide_bars', String(newval));
+                                    if (newval) {
+                                        setAreBarsHidden(true);
+                                    } else {
+                                        setAreBarsHidden(false);
+                                    }
+                                }}
+                                className={`h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl border-none transition-all shadow-sm ${
+                                    autoHideBars 
+                                    ? 'bg-mystic-accent/15 text-mystic-accent border border-mystic-accent/30 font-bold' 
+                                    : 'neu-btn text-stone-600 dark:text-slate-300 hover:text-mystic-accent'
+                                }`}
+                                title={autoHideBars ? "Ẩn Tự Động: Đang bật (cuộn xuống sẽ ẩn thanh công cụ)" : "Ẩn Tự Động: Đang tắt (luôn giữ thanh công cụ)"}
+                            >
+                                {autoHideBars ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                            <button 
+                                onClick={() => setAreBarsHidden(true)}
+                                className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl neu-btn border-none text-stone-600 dark:text-slate-300 hover:text-mystic-accent transition-all shadow-sm"
+                                title="Bật Chế Độ Đọc (Ẩn nhanh các thanh công cụ)"
+                            >
+                                <BookOpen size={15} />
+                            </button>
+                        </div>
+                    </GameInput>
+                </div>
+            </motion.div>
+
+            {/* Quick floating action controller bar when tools are tucked away */}
+            <AnimatePresence>
+                {areBarsHidden && (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.85, y: 15 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.85, y: 15 }}
+                        transition={{ duration: 0.25 }}
+                        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-2 bg-stone-300/90 dark:bg-[#070c18]/90 backdrop-blur-md rounded-2xl border border-stone-400/25 dark:border-slate-800/40 shadow-xl"
+                    >
+                        <span className="text-[10px] font-black text-stone-500 dark:text-slate-400 uppercase tracking-widest px-2 font-mono whitespace-nowrap">
+                            Chế độ đọc
+                        </span>
+                        
+                        <button
+                            onClick={() => setAreBarsHidden(false)}
+                            className="bg-mystic-accent hover:bg-mystic-accent/80 active:scale-95 text-white font-extrabold text-[10px] uppercase tracking-wider px-3.5 py-1.5 rounded-xl border-none transition-all shadow-md flex items-center gap-1.5 ml-1 whitespace-nowrap cursor-pointer"
                         >
-                            <ChevronsUp size={16} />
+                            <span>Hiện công cụ</span>
                         </button>
-                        <button 
-                            onClick={scrollToBottom}
-                            className="h-9 w-9 md:h-10 md:w-10 flex items-center justify-center rounded-xl neu-btn border-none text-stone-600 dark:text-slate-300 hover:text-mystic-accent transition-all shadow-sm"
-                            title="Về cuối lượt"
+
+                        <button
+                            onClick={() => {
+                                setAreBarsHidden(false);
+                                setAutoHideBars(false);
+                                localStorage.setItem('ark_hud_autohide_bars', 'false');
+                            }}
+                            className="p-1.5 rounded-lg neu-btn border-none text-stone-600 dark:text-stone-300 hover:text-mystic-accent transition-all flex items-center justify-center shrink-0 ml-1 cursor-pointer"
+                            title="Tắt Tự Động Ẩn (Luôn hiển thị công cụ)"
                         >
-                            <ChevronsDown size={16} />
+                            <Settings size={13} />
                         </button>
-                    </div>
-                </GameInput>
-            </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
 
         {/* SIDEBAR - UNIFIED COLLAPSIBLE SYSTEM */}
