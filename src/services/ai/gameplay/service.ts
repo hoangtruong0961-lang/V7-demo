@@ -47,6 +47,26 @@ function getCompositeSearchQuery(input: string, history: ChatMessage[], entities
   return composite.substring(0, 250); // Giới hạn độ dài để tối ưu hóa hiệu suất tạo vector
 }
 
+/**
+ * Ước lượng token chính xác cho cả tiếng Anh và tiếng Việt (Highly Optimized Token Estimation)
+ * Tránh lọt cửa sổ ngữ cảnh (context overflow) do mật độ token tiếng Việt có dấu cao hơn.
+ */
+function estimateTokens(text: string): number {
+  if (!text) return 0;
+  // Các ký tự tiếng Việt đặc trưng có dấu thanh điệu bổ trợ
+  const vietnameseRegex = /[áàảãạâấầẩẫậăắằẳẵặéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđ]/gi;
+  const vietnameseMatches = text.match(vietnameseRegex);
+  const vietnameseCount = vietnameseMatches ? vietnameseMatches.length : 0;
+  
+  // Tổng số ký tự không phải tiếng Việt đặc trưng
+  const otherCount = text.length - vietnameseCount;
+  
+  // Tiếng Việt có dấu: mật độ khoảng 2.6 ký tự/token cho LLM tokenizers thế hệ mới
+  // Ký tự thông thường (tiếng Anh, thẻ cấu trúc, thẻ XML): khoảng 4.0 ký tự/token
+  const estimated = (vietnameseCount / 2.6) + (otherCount / 4.0);
+  return Math.ceil(estimated);
+}
+
 // Helper to inject in-chat segments at specific depths from end of history
 function injectInChatSegments(
   mappedHistory: any[],
@@ -343,9 +363,6 @@ export const gameplayAiService = {
             `[${new Date(v.timestamp).toLocaleString()}] ${v.role === "user" ? "User" : "AI"}: ${v.text}`,
         )
         .join("\n\n");
-
-      // Rough token estimation function (approx 3.5 chars per token for Latin/Vietnamese)
-      const estimateTokens = (text: string) => Math.ceil((text || '').length / 3.5);
 
       // Task 3.3 Step 2: History Slicing & Context Builder (Tầng 3)
       // ST Context Builder: calculate budget and subtract system tokens to find how many history turns can fit
@@ -1180,9 +1197,6 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
       const storyBibleFacts = sbVectors
         .map((v) => `- [${v.title?.toUpperCase()}]: ${v.content}`)
         .join("\n");
-
-      // Rough token estimation function (approx 3.5 chars per token for Latin/Vietnamese)
-      const estimateTokens = (text: string) => Math.ceil((text || '').length / 3.5);
 
       // Task 3.3 Step 2: History Slicing & Context Builder (Tầng 3)
       // ST Context Builder: calculate budget and subtract system tokens to find how many history turns can fit
