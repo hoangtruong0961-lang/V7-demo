@@ -88,6 +88,7 @@ export default function KnowledgeTrainScreen({ onNavigate }: NavigationProps) {
   const [overlapWords, setOverlapWords] = useState(100); // Default to 100
   const [chunkingStrategy, setChunkingStrategy] = useState<'standard' | 'parent-child'>('standard');
   const [autoCleanup, setAutoCleanup] = useState(true); // Default to true
+  const [embeddingSource, setEmbeddingSource] = useState<'local' | 'cloud'>('local'); // Default to local for zero cost
 
   const [totalWords, setTotalWords] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
@@ -194,6 +195,10 @@ export default function KnowledgeTrainScreen({ onNavigate }: NavigationProps) {
 
     addLog(`🚀 Khởi động tiến trình trích lọc Tri thức: ${storyName}`);
     addLog(`📁 Đang xử lý ${files.length} tệp tin văn bản nguồn.`);
+    addLog(`⚙️ Chế độ Embedding: ${embeddingSource === 'local' ? "CỤC BỘ (100% Miễn phí & On-Device)" : "ĐÁM MÂY (Sử dụng API Key)"}`);
+    if (embeddingSource === 'local') {
+      addLog("🤖 Đang tải mô hình NLP cục bộ tại trình duyệt (Không tốn token)...");
+    }
 
     try {
       let combinedText = '';
@@ -245,7 +250,7 @@ export default function KnowledgeTrainScreen({ onNavigate }: NavigationProps) {
         addLog(`⚡ Đang tạo embedding phân đoạn [${idx + 1}/${chunks.length}]...`);
 
         try {
-          const embedding = await vectorService.getEmbedding(chunkText, settings);
+          const embedding = await vectorService.getEmbedding(chunkText, settings, embeddingSource === 'local');
           if (!embedding) {
             throw new Error("API Embedding trả về giá trị rỗng/null.");
           }
@@ -502,6 +507,48 @@ export default function KnowledgeTrainScreen({ onNavigate }: NavigationProps) {
                   Parent-Child Smart
                 </button>
               </div>
+            </div>
+
+            {/* Nguồn Embedding Selection */}
+            <div className="bg-[#e6ebf4] dark:bg-[#0b1329] p-4 rounded-2xl border border-[#cbd2df]/30 dark:border-[#142042]/20 shadow-[inset_4px_4px_8px_#cbd2df,inset_-4px_-4px_8px_#ffffff] dark:shadow-[inset_4px_4px_8px_#030610,inset_-4px_-4px_8px_#142042]">
+              <label className="block text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 font-bold flex items-center justify-between">
+                <span>Nguồn Embedding (Vectơ):</span>
+                <span className="text-[10px] text-green-500 font-extrabold normal-case">100% Free Mode</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEmbeddingSource('local')}
+                  className={`py-1.5 px-3 text-xs font-bold rounded-xl border transition-all ${
+                    embeddingSource === 'local'
+                      ? 'bg-[#e0e6f0] dark:bg-[#080d1c] border-green-500 text-green-600 dark:text-green-400 shadow-[inset_2px_2px_4px_#cbd2df] dark:shadow-[inset_2px_2px_4px_#030610]'
+                      : 'bg-[#e6ebf4] dark:bg-[#0b1329] border-transparent text-slate-550 hover:text-slate-800 dark:hover:text-slate-250 shadow-[2px_2px_4px_#cbd2df,-2px_-2px_4px_#ffffff] dark:shadow-[10px_10px_20px_#030610,-10px_-10px_20px_#142042]'
+                  }`}
+                  disabled={isTraining}
+                  id="source_local_btn"
+                >
+                  On-Device (Free)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmbeddingSource('cloud')}
+                  className={`py-1.5 px-3 text-xs font-bold rounded-xl border transition-all ${
+                    embeddingSource === 'cloud'
+                      ? 'bg-[#e0e6f0] dark:bg-[#080d1c] border-mystic-accent text-mystic-accent shadow-[inset_2px_2px_4px_#cbd2df] dark:shadow-[inset_2px_2px_4px_#030610]'
+                      : 'bg-[#e6ebf4] dark:bg-[#0b1329] border-transparent text-slate-550 hover:text-slate-800 dark:hover:text-slate-250 shadow-[2px_2px_4px_#cbd2df,-2px_-2px_4px_#ffffff] dark:shadow-[10px_10px_20px_#030610,-10px_-10px_20px_#142042]'
+                  }`}
+                  disabled={isTraining}
+                  id="source_cloud_btn"
+                >
+                  Gemini API (Cloud)
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 font-medium leading-relaxed font-sans">
+                {embeddingSource === 'local' 
+                  ? "✓ Sử dụng Web Transformers & nén hash cục bộ tại trình duyệt. Đảm bảo bảo mật toàn diện và hoàn toàn miễn phí."
+                  : "⚠ Yêu cầu Gemini API Key hợp lệ và hoạt động có phí / giới hạn lượt gọi tương đương theo thiết lập."
+                }
+              </p>
             </div>
 
             {/* Auto cleanup setting */}

@@ -1,6 +1,7 @@
 
 import { Lorebook, LorebookEntry } from "./types";
 import { useAppStore } from "../../../store/appStore";
+import MiniSearch from "minisearch";
 
 // Default values for common LSR variables to avoid raw macro leaks
 const LSR_DEFAULTS: Record<string, string> = {
@@ -233,6 +234,53 @@ function fallbackProcessMacros(text: string, dynamicVars: Record<string, string>
 }
 
 export class LorebookService {
+    private static miniSearchInstance: MiniSearch<any> | null = null;
+    private static cachedEntriesKey: string = '';
+
+    private static getMiniSearch(entries: LorebookEntry[]): MiniSearch<any> | null {
+        if (!entries || entries.length === 0) return null;
+        
+        // Quick, stable cache key to check if entries list has changed
+        const keyParts: string[] = [];
+        for (let i = 0; i < entries.length; i++) {
+            const e = entries[i];
+            keyParts.push(`${e.uid}:${e.content?.length || 0}:${(e.key ?? []).join(',')}`);
+        }
+        const currentKey = keyParts.join("|");
+
+        if (this.miniSearchInstance && this.cachedEntriesKey === currentKey) {
+            return this.miniSearchInstance;
+        }
+
+        try {
+            const ms = new MiniSearch({
+                fields: ['title', 'content', 'keywordsString'],
+                storeFields: ['uid'],
+                searchOptions: {
+                    boost: { title: 2, keywordsString: 1.5, content: 1 },
+                    prefix: true,
+                    fuzzy: 0.2
+                }
+            });
+
+            const docs = entries.map(e => ({
+                id: String(e.uid),
+                uid: String(e.uid),
+                title: e.comment || '',
+                content: e.content || '',
+                keywordsString: Array.isArray(e.key) ? e.key.join(' ') : ''
+            }));
+
+            ms.addAll(docs);
+            this.miniSearchInstance = ms;
+            this.cachedEntriesKey = currentKey;
+            return ms;
+        } catch (err) {
+            console.error("[LorebookService] Failed to create or update MiniSearch BM25 index:", err);
+            return null;
+        }
+    }
+
     /**
      * Converts raw JSON structure to Array
      */
@@ -442,11 +490,36 @@ export class LorebookService {
         while (newActivations && recursionDepth <= MAX_RECURSION) {
             newActivations = false;
 
+            // BM25 Hybrid Optimization: Filter dynamic evaluation set to only include highly-relevant entries
+            let candidateUids: Set<string> | null = null;
+            const ms = this.getMiniSearch(entries);
+            if (ms && textToScan.trim().length > 0) {
+                try {
+                    const results = ms.search(textToScan, {
+                        prefix: true,
+                        fuzzy: 0.2
+                    });
+                    candidateUids = new Set(results.map(r => String(r.id)));
+                } catch (err) {
+                    // Fallback to full evaluation on error
+                }
+            }
+
             for (const entry of entries) {
                 if (entry.disable) continue;
                 if (activeEntriesMap.has(entry.uid.toString())) continue;
                 if (recursionDepth > 0 && entry.nonRecursive) continue; // Skip non-recursive on pass > 0
                 if (recursionDepth === 0 && entry.delayUntilRecursive) continue; // Skip on first pass
+
+                // Skip scanning if candidate list exists, the entry is not constant and not time-sensitive, and not in the candidate list
+                if (candidateUids && !entry.constant) {
+                    const hasTimeEffects = (entry.delay !== undefined && entry.delay > 0) || 
+                                           (entry.cooldown !== undefined && entry.cooldown > 0) || 
+                                           (entry.sticky !== undefined && entry.sticky > 0);
+                    if (!hasTimeEffects && !candidateUids.has(entry.uid.toString())) {
+                        continue; // Skip evaluating keys to save massive amounts of overhead and token leaks
+                    }
+                }
 
                 let activated = false;
 

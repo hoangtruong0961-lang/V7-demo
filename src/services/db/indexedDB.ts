@@ -114,6 +114,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     useGeminiApi: true,
     proxyEnabled: false,
     enableVectorMemory: true,
+    useLocalEmbedding: true,
     enableSearchGrounding: false,
     proxies: [],
     activeProxyId: undefined,

@@ -1105,6 +1105,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate, fromGame, i
                         </div>
                       </div>
 
+                      {settings.enableVectorMemory && (
+                        <div className="pt-6 border-t border-[#cbd2df]/20 dark:border-[#142042]/10">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="space-y-1">
+                              <label className="text-sm font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <HardDrive className="w-4 h-4 text-[#10b981]" /> Tác vụ Embedding Cục bộ (Trình duyệt)
+                              </label>
+                              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 leading-relaxed pr-8 font-medium">
+                                Sử dụng bộ mã hóa NLP chạy hoàn toàn cục bộ trên thiết bị của bạn. Không chuyển nội dung lên đám mây làm tăng tốc độ phản hồi và bảo tuyệt mật, tiết kiệm 100% token.
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleChange('useLocalEmbedding', !settings.useLocalEmbedding)}
+                              className="relative shrink-0 w-12 h-6 rounded-full transition-colors duration-300 bg-[#e6ebf4] dark:bg-[#0b1329] shadow-[inset_2px_2px_4px_#cbd2df,inset_-2px_-2px_4px_#ffffff] dark:shadow-[inset_2px_2px_4px_#030610,inset_-2px_-2px_4px_#142042] border border-[#cbd2df]/20 dark:border-[#142042]/10 cursor-pointer"
+                              id="toggle-local-rag"
+                            >
+                              <motion.div 
+                                layout
+                                className={`absolute top-0.5 left-1 w-4 h-4 rounded-full shadow-[2px_2px_4px_#cbd2df,-2px_-2px_4px_#ffffff] dark:shadow-[2px_2px_4px_#030610,-2px_-2px_4px_#142042] transition-colors ${settings.useLocalEmbedding ? 'bg-[#10b981]' : 'bg-slate-400 dark:bg-slate-600'}`}
+                                animate={{ x: settings.useLocalEmbedding ? 24 : 0 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="pt-6 border-t border-[#cbd2df]/20 dark:border-[#142042]/10">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">

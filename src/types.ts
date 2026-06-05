@@ -124,6 +124,7 @@ export interface AppSettings {
   useGeminiApi: boolean;
   proxyEnabled: boolean;
   enableVectorMemory: boolean;
+  useLocalEmbedding?: boolean;
   enableSearchGrounding?: boolean;
 
   // Story styling
