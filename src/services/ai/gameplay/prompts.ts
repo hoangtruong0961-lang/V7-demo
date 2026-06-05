@@ -690,6 +690,40 @@ QUY TẮC PHÁT TRIỂN TRUYỆN VÀ VẬT PHẨM (MANDATORY):
     source: "GenreAndSettingGrounding",
   });
 
+  // CHỈ THỊ CHẤT LƯỢNG VĂN BẢN VÀ THẨM MỸ VĂN HỌC BẮT BUỘC (LITERARY PROSE ELEVATION LAWS)
+  segments.push({
+    priority: POSITION_PRIORITY["system"],
+    order: 4, // Sau sự nhất quán bối cảnh, trước quy tắc định dạng kỹ thuật khác
+    content: `
+<LITERARY_PROSE_ELEVATION_LAWS>
+🔥 CHỈ THỊ NÂNG CAO VĂN PHONG & CHẤT LƯỢNG VĂN HỌC (MANDATORY):
+Để đáp ứng kỳ vọng văn phong tinh tế, sâu sắc và đậm chất nghệ thuật, bạn PHẢI tuân thủ các quy tắc sáng tạo sau:
+
+1. **Trực quan hóa tuyệt đối - "Show, Don't Tell"**:
+   - TUYỆT ĐỐI KHÔNG trực tiếp tóm tắt cảm xúc nhân vật bằng các tính từ chung chung (như: "Sophia lo lắng", "Arthur cảm thấy ngạc nhiên", "hắn vô cùng giận dữ").
+   - THAY VÀO ĐÓ, hãy mô tả các biểu hiện sinh học, cử chỉ vi tế và ngôn ngữ cơ thể: những cái nhíu nhẹ chân mày, nhịp tim đập dồn dập sau lớp áo sơ mi, bả vai khẽ run lên, khớp ngón tay siết chặt đến trắng bệch, ánh mắt dao động né khỏi hướng đối diện, hoặc cái thở hắt ra đè nén. Cử chỉ nhỏ kể câu chuyện lớn.
+
+2. **Chế tác văn phong mượt mà chất lượng cao (Exquisite Prose & Cultural Fluency)**:
+   - Sử dụng ngôn từ giàu sức gợi, mượt mà bám sát phong cách dịch văn học và Light Novel Nhật Bản cao cấp bậc nhất (nhẹ nhàng, ấm áp, đôi lúc bay bổng dịu dàng, châm biếm sắc sảo đầy ẩn ý nhưng sâu sắc).
+   - KHÔNG sử dụng văn nói thời thượng thô ráp, ngôn ngữ mạng hiện đại hay giọng văn dịch máy thô cứng.
+   - **Kỷ luật cấu trúc câu**: Tránh lặp lại cấu trúc ngữ pháp gần nhau. Không khởi đầu các câu văn liên tiếp bằng đại từ xưng hô ("Hắn...", "Cô...", "Yuki..."). Sử dụng chủ ngữ ẩn hoặc đảo ngữ linh hoạt để câu văn uyển chuyển.
+
+3. **Bồi đắp bối cảnh đa giác quan (Sensory Realism & Atmospheric Depth)**:
+   - Trong mỗi cảnh quay, hãy chạm đến ít nhất 3 giác quan: không chỉ phần nhìn (thị giác) mà còn là tiếng rè rè của dàn điều hòa, hương thơm thoang thoảng của trà nhài lạnh, tiếng giọt mưa đập lách tách ngoài bậu cửa, luồng gió lạnh thọc qua kẽ áo, hay ánh sáng mập mờ từ chao đèn cũ hắt những bóng dài tịch mịch trên sàn gỗ.
+   - Hãy để môi trường phản chiếu hoặc tương tác với tâm trạng của nhân vật (thẩm mỹ cảnh vật đồng điệu).
+
+4. **Hội thoại giàu ẩn ý và hành bi đi kèm (Subtextual Dialogues with Beats)**:
+   - Nhân vật KHÔNG được tự nói ra toàn bộ suy nghĩ hay động cơ một cách thẳng đuột. Hãy đưa ẩn ý (subtext), sự ngập ngừng, lảng tránh vào lời nói.
+   - Xen kẽ giữa các câu thoại là "beats" (nhịp hành động vi tế) của nhân vật: họ mân mê chiếc bút, nhấp một ngụm trà để giấu đi sự bối rối, hay liếc nhìn đồng hồ treo tường.
+   - Nhất quán xưng hô và khẩu khí độc bản cho từng NPC theo đúng hồ sơ gốc của họ.
+
+5. **Làm chủ nhịp độ truyện dồn dập hay lắng dọng (Dynamic Prose Pacing)**:
+   - Với cảnh hành động, căng thẳng: Sử dụng câu ngắn, gọn, dứt khoát, nhịp nhanh, đẩy cao kịch tính.
+   - Với cảnh đời thường (slice of life), tâm lý, lãng mạn hoặc hoài niệm: Kéo dài câu chữ với các biện pháp ẩn dụ kỳ lạ đầy sáng tạo, miêu tả sâu dòng suy nghĩ nội tâm phong phú, nhịp điệu êm ả, chậm rãi lắng đọng.
+</LITERARY_PROSE_ELEVATION_LAWS>`,
+    source: "LiteraryProseElevation",
+  });
+
   // 0. Minimalist NPC Registry
   if (minimalistSection) {
     segments.push({

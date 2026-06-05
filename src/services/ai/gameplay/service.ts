@@ -25,6 +25,28 @@ import { DynamicMemoryService } from "../memory/DynamicMemoryService";
 const MAX_HISTORY_CONTEXT = 40;
 const EMBEDDING_SCHEDULE_INTERVAL = 10;
 
+// Tăng cường chất lượng RAG: Xây dựng truy vấn lai hợp (Composite Search Query) giúp truy xuất ký ức đúng ngữ cảnh kế tiếp
+function getCompositeSearchQuery(input: string, history: ChatMessage[], entities?: any[]): string {
+  if (input.trim().length > 50) return input;
+  
+  // Lấy danh bạ NPC xuất hiện
+  const npcNames = entities && entities.length > 0 
+    ? entities.slice(0, 3).map(e => e.name).join(", ") 
+    : "";
+    
+  // Lấy ngữ cảnh hội thoại cực gần (2 tin nhắn cuối)
+  const sliceSize = history.length >= 2 ? 2 : history.length;
+  const recentHistorySummary = history.slice(-sliceSize)
+    .map(m => m.text.replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, "").substring(0, 80).trim())
+    .join(" ");
+    
+  let composite = input;
+  if (recentHistorySummary) composite += " " + recentHistorySummary;
+  if (npcNames) composite += " [NPCs: " + npcNames + "]";
+  
+  return composite.substring(0, 250); // Giới hạn độ dài để tối ưu hóa hiệu suất tạo vector
+}
+
 // Helper to inject in-chat segments at specific depths from end of history
 function injectInChatSegments(
   mappedHistory: any[],
@@ -239,8 +261,9 @@ export const gameplayAiService = {
         worldData.config.contextConfig?.items?.storyBible !== false;
 
       // Prepare parallel tasks for optimal latency
+      const ragQuery = getCompositeSearchQuery(cleanedInput, history, worldData.entities);
       const similarVectorsPromise = shouldSearchEmbedding
-        ? vectorService.searchSimilarVectors(cleanedInput, settings, 5).catch(err => {
+        ? vectorService.searchSimilarVectors(ragQuery, settings, 5).catch(err => {
             console.warn("Vector RAG failed:", err);
             return [];
           })
@@ -248,7 +271,7 @@ export const gameplayAiService = {
 
       const sbVectorsPromise = shouldQueryStoryBible
         ? storyBibleService.queryContext(
-            cleanedInput,
+            ragQuery,
             history,
             campaignId,
             settings,
@@ -1113,8 +1136,9 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
       const shouldSearchEmbeddingStream =
         shouldCallEmbeddingStream && history.length >= MAX_HISTORY_CONTEXT;
 
+      const ragQueryStream = getCompositeSearchQuery(cleanedInput, history, worldData.entities);
       const similarVectors = shouldSearchEmbeddingStream
-        ? await vectorService.searchSimilarVectors(cleanedInput, settings, 5)
+        ? await vectorService.searchSimilarVectors(ragQueryStream, settings, 5)
         : [];
 
       const relevantMemories = similarVectors
@@ -1131,7 +1155,7 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
       if (shouldQueryGraphRagStream) {
         try {
             graphRAGContext = await GraphRAGService.retrieveContext(
-                cleanedInput,
+                ragQueryStream,
                 history,
                 campaignId,
                 settings
@@ -1147,7 +1171,7 @@ Be extremely accurate. ONLY output updates when there is a true change/consequen
         worldData.config.contextConfig?.items?.storyBible !== false;
       const sbVectors = shouldQueryStoryBibleStream
         ? await storyBibleService.queryContext(
-            cleanedInput,
+            ragQueryStream,
             history,
             campaignId,
             settings,
